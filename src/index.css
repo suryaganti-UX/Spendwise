@@ -1,0 +1,247 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Design Tokens — CSS Custom Properties
+   Using space-separated RGB channels so Tailwind opacity utilities work:
+   e.g. bg-accent/20 → rgba(53, 92, 222, 0.2)
+───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --sw-bg-primary:   247 245 241;   /* warm parchment */
+  --sw-bg-secondary: 255 255 255;   /* white card */
+  --sw-bg-tertiary:  236 234 230;   /* light divider */
+  /* Borders */
+  --sw-border-soft:  232 228 223;
+  --sw-border-medium: 217 212 206;
+  /* Text */
+  --sw-text-primary:   17 17 16;
+  --sw-text-secondary: 107 104 100;
+  --sw-text-hint:      168 164 159;
+  /* Accent (cobalt blue) */
+  --sw-accent:       53 92 222;
+  --sw-accent-light: 238 242 255;
+  --sw-accent-hover: 39 75 197;
+  /* Status */
+  --sw-positive: 22 163 74;
+  --sw-negative: 220 38 38;
+  --sw-warning:  217 119 6;
+  /* Shadow */
+  --sw-shadow-card: 0 4px 20px rgba(0,0,0,.06);
+}
+
+.dark {
+  /* Surfaces */
+  --sw-bg-primary:    15  15  14;   /* near-black */
+  --sw-bg-secondary:  26  26  24;   /* dark card */
+  --sw-bg-tertiary:   38  38  36;   /* subtle divider */
+  /* Borders */
+  --sw-border-soft:   48  48  46;
+  --sw-border-medium: 62  62  60;
+  /* Text */
+  --sw-text-primary:   245 243 239;
+  --sw-text-secondary: 154 150 144;
+  --sw-text-hint:       90  86  82;
+  /* Accent (brighter for dark bg) */
+  --sw-accent:        91 127 240;
+  --sw-accent-light:  26  36  68;
+  --sw-accent-hover: 112 144 245;
+  /* Status (softer for dark bg) */
+  --sw-positive: 34 197 94;
+  --sw-negative: 248 113 113;
+  --sw-warning:  251 191 36;
+  /* Shadow */
+  --sw-shadow-card: 0 4px 24px rgba(0,0,0,.40);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: rgb(var(--sw-bg-primary));
+    color: rgb(var(--sw-text-primary));
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Dark mode — CSS vars above handle all semantic tokens */
+  .dark body {
+    background-color: rgb(var(--sw-bg-primary));
+    color: rgb(var(--sw-text-primary));
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid #355CDE;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Tabular numbers for currency */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D9D4CE;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #A8A49F;
+  }
+
+  /* SVG text selection prevention */
+  svg text {
+    user-select: none;
+  }
+
+  /* Smooth transitions for dark mode */
+  * {
+    transition-property: background-color, border-color, color;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
+
+  /* But don't transition transforms/opacity (handled by framer-motion) */
+  button, a, [role="button"] {
+    transition-property: background-color, border-color, color, box-shadow, transform;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-bg-secondary border border-border-soft rounded-2xl p-5 transition-shadow duration-200;
+  }
+  .card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .btn-primary {
+    @apply bg-accent text-white font-semibold px-6 py-3 rounded-xl hover:bg-accent-hover transition-all duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-bg-secondary text-text-primary font-medium px-4 py-2 rounded-xl border border-border-soft hover:bg-bg-tertiary transition-all duration-150;
+  }
+
+  .btn-outline {
+    @apply bg-transparent text-accent font-medium px-4 py-2 rounded-xl border border-accent hover:bg-accent-light transition-all duration-150;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-xl border border-border-soft bg-bg-secondary text-text-primary placeholder:text-text-hint focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-150;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .section-title {
+    @apply text-base font-semibold text-text-primary mb-4;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .focus\:not-sr-only:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: revert;
+    margin: revert;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}
+
+/* ── Print / PDF export styles ───────────────────────────────────── */
+@media print {
+  /* Hide chrome and interactive elements */
+  header,
+  footer,
+  [data-print-hide],
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 11pt;
+  }
+
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Print header injected by JS is hidden until @media print shows it */
+  .print-header {
+    display: block !important;
+    padding-bottom: 16pt;
+    margin-bottom: 16pt;
+    border-bottom: 1.5pt solid #E8E4DF;
+  }
+
+  /* Cards: flat, no shadows */
+  .card,
+  .rounded-2xl,
+  .rounded-xl {
+    box-shadow: none !important;
+    border: 1pt solid #E8E4DF !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Avoid breaking mid-section */
+  section,
+  .space-y-5 > * {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Color preservation */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
