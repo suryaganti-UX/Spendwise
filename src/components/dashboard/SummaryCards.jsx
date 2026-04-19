@@ -83,7 +83,7 @@ export function SummaryCards({ income, expenses, savings, transactionCount, cred
         value={Math.abs(savings)}
         sub={`${Math.round(savingsRate || 0)}% of income`}
         icon={PiggyBank}
-        iconColor="#355CDE"
+        iconColor="#10B981"
         borderColor={savingsColor}
         delay={0.1}
         formatter={(v) => (savings < 0 ? '-' : '') + formatINRCompact(v)}

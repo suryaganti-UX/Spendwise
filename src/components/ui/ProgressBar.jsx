@@ -1,6 +1,6 @@
 import React from 'react'
 
-export function ProgressBar({ value, max = 100, color = '#355CDE', height = 4, className = '', animated = true }) {
+export function ProgressBar({ value, max = 100, color = '#10B981', height = 4, className = '', animated = true }) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100))
   return (
     <div className={`bg-gray-100 rounded-full overflow-hidden ${className}`} style={{ height }}>

@@ -132,7 +132,7 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
               >
                 <FileText
                   className="w-9 h-9"
-                  style={{ color: isDragging ? '#355CDE' : i === 1 ? '#355CDE' : '#C4BFB9' }}
+                  style={{ color: isDragging ? '#10B981' : i === 1 ? '#10B981' : '#C4BFB9' }}
                 />
               </div>
             ))}

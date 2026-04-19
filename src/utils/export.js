@@ -130,7 +130,7 @@ export function exportPDF(opts = {}) {
   header.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12pt;">
       <div>
-        <div style="font-size:18pt;font-weight:700;color:#355CDE;letter-spacing:-0.5pt;">SpendWise</div>
+        <div style="font-size:18pt;font-weight:700;color:#10B981;letter-spacing:-0.5pt;">SpendWise</div>
         <div style="font-size:9pt;color:#6B6864;margin-top:2pt;">Finance Report · ${period}</div>
       </div>
       <div style="font-size:9pt;color:#A8A49F;text-align:right;">
@@ -149,7 +149,7 @@ export function exportPDF(opts = {}) {
       </div>
       <div style="background:#EEF2FF;border-radius:8pt;padding:8pt 10pt;">
         <div style="font-size:8pt;color:#6B6864;margin-bottom:4pt;">Net Savings</div>
-        <div style="font-size:13pt;font-weight:700;color:#355CDE;">${savings}</div>
+        <div style="font-size:13pt;font-weight:700;color:#10B981;">${savings}</div>
       </div>
       <div style="background:#F7F5F1;border-radius:8pt;padding:8pt 10pt;">
         <div style="font-size:8pt;color:#6B6864;margin-bottom:4pt;">Savings Rate</div>

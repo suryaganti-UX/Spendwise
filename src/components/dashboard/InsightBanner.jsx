@@ -32,7 +32,7 @@ export function InsightBanner({ insights = [] }) {
               exit={{ opacity: 0, x: -10 }}
               transition={{ delay: i * 0.08 }}
               className="flex items-start gap-2 bg-bg-secondary rounded-xl px-3 py-2.5 border border-border-soft"
-              style={{ borderLeft: `3px solid ${insight.color || '#355CDE'}` }}
+              style={{ borderLeft: `3px solid ${insight.color || '#10B981'}` }}
             >
               <span className="text-base leading-none mt-0.5 flex-shrink-0" aria-hidden="true">
                 {insight.icon || '💡'}

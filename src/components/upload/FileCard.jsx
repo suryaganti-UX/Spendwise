@@ -67,7 +67,7 @@ export function FileCard({ statement, onRemove, onSetBank }) {
               <span>Parsing transactions...</span>
               <span className="tabular-nums">{Math.round(parseProgress)}%</span>
             </div>
-            <ProgressBar value={parseProgress} max={100} color="#355CDE" height={3} animated={false} />
+            <ProgressBar value={parseProgress} max={100} color="#10B981" height={3} animated={false} />
             {transactionCount > 0 && (
               <p className="text-xs text-text-hint">Found {transactionCount} transactions so far</p>
             )}

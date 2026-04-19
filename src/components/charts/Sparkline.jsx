@@ -4,7 +4,7 @@ import React, { useMemo } from 'react'
  * Tiny inline sparkline chart — pure SVG
  * Used in summary cards and trend tables
  */
-export function Sparkline({ data = [], width = 60, height = 24, color = '#355CDE', positive = true, strokeWidth = 1.5 }) {
+export function Sparkline({ data = [], width = 60, height = 24, color = '#10B981', positive = true, strokeWidth = 1.5 }) {
   const points = useMemo(() => {
     if (!data || data.length < 2) return null
     const min = Math.min(...data)

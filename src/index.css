@@ -19,10 +19,10 @@
   --sw-text-primary:   17 17 16;
   --sw-text-secondary: 107 104 100;
   --sw-text-hint:      168 164 159;
-  /* Accent (cobalt blue) */
-  --sw-accent:       53 92 222;
-  --sw-accent-light: 238 242 255;
-  --sw-accent-hover: 39 75 197;
+  /* Accent (emerald green) */
+  --sw-accent:       16 185 129;
+  --sw-accent-light: 236 253 245;
+  --sw-accent-hover: 5 150 105;
   /* Status */
   --sw-positive: 22 163 74;
   --sw-negative: 220 38 38;
@@ -44,9 +44,9 @@
   --sw-text-secondary: 154 150 144;
   --sw-text-hint:       90  86  82;
   /* Accent (brighter for dark bg) */
-  --sw-accent:        91 127 240;
-  --sw-accent-light:  26  36  68;
-  --sw-accent-hover: 112 144 245;
+  --sw-accent:        52 211 153;
+  --sw-accent-light:   2  44  34;
+  --sw-accent-hover: 110 231 183;
   /* Status (softer for dark bg) */
   --sw-positive: 34 197 94;
   --sw-negative: 248 113 113;
@@ -82,7 +82,7 @@
 
   /* Focus ring */
   :focus-visible {
-    outline: 2px solid #355CDE;
+    outline: 2px solid #10B981;
     outline-offset: 2px;
     border-radius: 4px;
   }
