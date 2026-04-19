@@ -67,19 +67,30 @@ export function reducer(state, action) {
       const { statementId, data } = action.payload
       const updatedStatements = state.statements.map(stmt =>
         stmt.id === statementId
-          ? { ...stmt, ...data, parseStatus: 'done', parseProgress: 100, parseError: null }
+          ? { ...stmt, ...data, parseStatus: 'done', parseProgress: 100, parseError: null, pendingPassword: null }
           : stmt
       )
 
-      // Check if all statements are done (or errored)
-      const allDone = updatedStatements.every(
-        s => s.parseStatus === 'done' || s.parseStatus === 'error'
-      )
+      // password_required files need explicit user action — don't auto-complete
+      const isTerminal = s => ['done', 'error', 'duplicate', 'unsupported'].includes(s.parseStatus)
+      const allTerminal = updatedStatements.every(s => isTerminal(s) || s.parseStatus === 'password_required')
+      const allNonLockedTerminal = updatedStatements.filter(s => s.parseStatus !== 'password_required').every(isTerminal)
+      const anyPasswordRequired = updatedStatements.some(s => s.parseStatus === 'password_required')
       const anyDone = updatedStatements.some(s => s.parseStatus === 'done')
+
+      let newStatus
+      if (allNonLockedTerminal && anyPasswordRequired) {
+        // Some done, some locked — stay on upload screen for password entry
+        newStatus = 'uploading'
+      } else if (allTerminal && !anyPasswordRequired) {
+        newStatus = anyDone ? 'complete' : 'error'
+      } else {
+        newStatus = 'processing'
+      }
 
       return {
         ...state,
-        status: allDone ? (anyDone ? 'complete' : 'error') : 'processing',
+        status: newStatus,
         statements: updatedStatements,
       }
     }
@@ -92,15 +103,123 @@ export function reducer(state, action) {
           : stmt
       )
 
-      const allDone = updatedStatements.every(
-        s => s.parseStatus === 'done' || s.parseStatus === 'error'
-      )
+      // password_required files need explicit user action — don't auto-complete
+      const isTerminal = s => ['done', 'error', 'duplicate', 'unsupported'].includes(s.parseStatus)
+      const anyPasswordRequired = updatedStatements.some(s => s.parseStatus === 'password_required')
+      const allNonLockedTerminal = updatedStatements.filter(s => s.parseStatus !== 'password_required').every(isTerminal)
+      const allTerminal = updatedStatements.every(s => isTerminal(s) || s.parseStatus === 'password_required')
       const anyDone = updatedStatements.some(s => s.parseStatus === 'done')
+
+      let newStatus
+      if (allNonLockedTerminal && anyPasswordRequired) {
+        newStatus = 'uploading'
+      } else if (allTerminal && !anyPasswordRequired) {
+        newStatus = anyDone ? 'complete' : 'error'
+      } else {
+        newStatus = 'processing'
+      }
 
       return {
         ...state,
-        status: allDone ? (anyDone ? 'complete' : 'error') : 'processing',
+        status: newStatus,
         statements: updatedStatements,
+      }
+    }
+
+    case ACTIONS.STATEMENT_INSPECTING: {
+      return {
+        ...state,
+        statements: state.statements.map(stmt =>
+          stmt.id === action.payload
+            ? { ...stmt, parseStatus: 'inspecting', parseError: null }
+            : stmt
+        ),
+      }
+    }
+
+    case ACTIONS.STATEMENT_PASSWORD_REQUIRED: {
+      const updatedStatements = state.statements.map(stmt =>
+        stmt.id === action.payload
+          ? { ...stmt, parseStatus: 'password_required', parseError: null, passwordAttempts: 0 }
+          : stmt
+      )
+      // If any done files exist, still allow the dashboard (partial analysis)
+      const anyDone = updatedStatements.some(s => s.parseStatus === 'done')
+      return {
+        ...state,
+        statements: updatedStatements,
+        // Don't switch to 'complete' — stay in uploading/processing so upload screen is shown
+        status: anyDone ? state.status : 'uploading',
+      }
+    }
+
+    case ACTIONS.STATEMENT_SET_PASSWORD: {
+      const { statementId, password } = action.payload
+      return {
+        ...state,
+        statements: state.statements.map(stmt =>
+          stmt.id === statementId
+            ? { ...stmt, pendingPassword: password, parseStatus: 'pending', parseError: null }
+            : stmt
+        ),
+      }
+    }
+
+    case ACTIONS.STATEMENT_WRONG_PASSWORD: {
+      return {
+        ...state,
+        statements: state.statements.map(stmt =>
+          stmt.id === action.payload
+            ? {
+                ...stmt,
+                parseStatus: 'password_required',
+                parseError: 'wrong_password',
+                passwordAttempts: (stmt.passwordAttempts || 0) + 1,
+                pendingPassword: null,
+              }
+            : stmt
+        ),
+      }
+    }
+
+    case ACTIONS.STATEMENT_DUPLICATE: {
+      return {
+        ...state,
+        statements: state.statements.map(stmt =>
+          stmt.id === action.payload
+            ? { ...stmt, parseStatus: 'duplicate', parseError: null }
+            : stmt
+        ),
+      }
+    }
+
+    case ACTIONS.STATEMENT_UNSUPPORTED: {
+      const { statementId, reason } = action.payload
+      return {
+        ...state,
+        statements: state.statements.map(stmt =>
+          stmt.id === statementId
+            ? { ...stmt, parseStatus: 'unsupported', parseError: reason }
+            : stmt
+        ),
+      }
+    }
+
+    case ACTIONS.FORCE_COMPLETE: {
+      const anyDone = state.statements.some(s => s.parseStatus === 'done')
+      return {
+        ...state,
+        status: anyDone ? 'complete' : state.status,
+      }
+    }
+
+    case ACTIONS.LOAD_UPLOAD_DEMO: {
+      // Load mixed-status statements to preview the upload/password flow UI
+      return {
+        ...state,
+        status: 'uploading',
+        statements: action.payload,
+        isDemoMode: true,
       }
     }
 

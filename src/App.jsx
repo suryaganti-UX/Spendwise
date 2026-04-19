@@ -5,10 +5,10 @@ import { reducer, INITIAL_STATE } from './store/reducer.js'
 import { actions, ACTIONS } from './store/actions.js'
 import { UploadZone } from './components/upload/UploadZone.jsx'
 import { Dashboard } from './components/dashboard/Dashboard.jsx'
-import { getPDFJS, extractPDFText } from './utils/pdfWorker.js'
+import { getPDFJS, extractPDFText, inspectPDF } from './utils/pdfWorker.js'
 import { parseStatement } from './parsers/index.js'
 import { categorizeAll } from './utils/categorize.js'
-import { createMockStatements } from './utils/mockData.js'
+import { createMockStatements, createMockUploadPreview } from './utils/mockData.js'
 import { downloadCSV } from './utils/export.js'
 import { format } from 'date-fns'
 import { getBankById } from './constants/banks.js'
@@ -65,16 +65,55 @@ export default function App() {
    */
   const handleAnalyze = useCallback(async () => {
     const pendingStatements = state.statements.filter(s => s.parseStatus === 'pending')
+    if (pendingStatements.length === 0) return
 
+    // ── Phase 1: Inspect each pending file ────────────────────────────
     for (const stmt of pendingStatements) {
-      const id = stmt.id          // e.g. 'stmt_1234_abc' — the id UploadZone assigned
-      const file = stmt.file      // the actual File object UploadZone embedded
+      const { id, file, filename } = stmt
+      if (!file || processingRef.current.has(id)) continue
 
+      processingRef.current.add(id)
+      dispatch(actions.statementInspecting(id))
+
+      // Duplicate detection: same filename + size against already-done statements
+      const isDuplicate = state.statements.some(
+        s => s.id !== id && s.parseStatus === 'done' && s.filename === filename && s.file?.size === file.size
+      )
+      if (isDuplicate) {
+        dispatch(actions.statementDuplicate(id))
+        processingRef.current.delete(id)
+        continue
+      }
+
+      try {
+        const result = await inspectPDF(file)
+        if (result === 'password_required') {
+          dispatch(actions.statementPasswordRequired(id))
+          processingRef.current.delete(id)
+          continue
+        } else if (result === 'corrupted') {
+          dispatch(actions.statementUnsupported(id, 'File appears corrupted or is not a valid PDF.'))
+          processingRef.current.delete(id)
+          continue
+        }
+        // 'ok' → leave as 'pending' for parse phase, but release lock
+        processingRef.current.delete(id)
+      } catch {
+        dispatch(actions.statementUnsupported(id, 'Could not open this file.'))
+        processingRef.current.delete(id)
+        continue
+      }
+    }
+
+    // ── Phase 2: Parse all still-pending files (including newly unlocked) ──
+    const parseable = state.statements.filter(s => s.parseStatus === 'pending')
+
+    for (const stmt of parseable) {
+      const { id, file, bank } = stmt
       if (!file) {
         dispatch(actions.statementError(id, 'File reference missing. Please re-upload.'))
         continue
       }
-
       if (processingRef.current.has(id)) continue
       processingRef.current.add(id)
 
@@ -82,45 +121,30 @@ export default function App() {
         dispatch(actions.updateParseProgress(id, 5, 0))
 
         const text = await extractPDFText(file, (progress) => {
-          dispatch(actions.updateParseProgress(id, Math.floor(progress * 0.8), 0))
-        })
-
-        if (text === 'PASSWORD_PROTECTED') {
-          dispatch(actions.statementError(id, 'This PDF is password-protected. Please unlock it first.'))
-          processingRef.current.delete(id)
-          continue
-        }
-
-        if (text === 'NO_TEXT_LAYER') {
-          dispatch(actions.statementError(id, 'This PDF appears to be a scanned image. We need a text-based PDF.'))
-          processingRef.current.delete(id)
-          continue
-        }
+          dispatch(actions.updateParseProgress(id, Math.floor(progress * 80), 0))
+        }, stmt.pendingPassword || null)
 
         dispatch(actions.updateParseProgress(id, 80, 0))
 
-        const parsed = parseStatement(text, stmt.bank !== 'unknown' ? stmt.bank : undefined)
+        const parsed = parseStatement(text, bank !== 'unknown' ? bank : undefined)
         if (!parsed || !parsed.transactions?.length) {
           dispatch(actions.statementError(id, 'Could not parse transactions. Ensure this is a bank statement PDF.'))
           processingRef.current.delete(id)
           continue
         }
 
-        // Categorize transactions
         const categorized = categorizeAll(parsed.transactions, state.userRules)
-        const bank = getBankById(parsed.bank)
+        const bankMeta = getBankById(parsed.bank)
 
-        // Compute unique month labels from transaction dates
         const monthSet = new Set()
         for (const txn of categorized) {
           if (txn.date) monthSet.add(format(txn.date, 'MMM yyyy'))
         }
 
-        // Build the enriched statement data (will be merged over the placeholder in reducer)
         const statementData = {
-          bank: parsed.bank || stmt.bank,
-          bankLabel: bank?.label || (parsed.bank || stmt.bank || 'unknown').toUpperCase(),
-          bankColor: bank?.color || stmt.bankColor || '#6B6864',
+          bank: parsed.bank || bank,
+          bankLabel: bankMeta?.label || (parsed.bank || bank || 'unknown').toUpperCase(),
+          bankColor: bankMeta?.color || stmt.bankColor || '#6B6864',
           accountNumber: parsed.accountNumber || null,
           period: parsed.period || null,
           months: [...monthSet].sort(),
@@ -131,13 +155,32 @@ export default function App() {
 
         dispatch(actions.statementParsed(id, statementData))
       } catch (err) {
-        console.error('Parse error for', stmt.filename, err)
-        dispatch(actions.statementError(id, err.message || 'Failed to parse this file.'))
+        if (err.message === 'WRONG_PASSWORD') {
+          dispatch(actions.statementWrongPassword(id))
+        } else if (err.message === 'PASSWORD_PROTECTED') {
+          dispatch(actions.statementPasswordRequired(id))
+        } else if (err.message === 'NO_TEXT_LAYER') {
+          dispatch(actions.statementError(id, 'This PDF appears to be a scanned image. We need a text-based PDF.'))
+        } else {
+          dispatch(actions.statementError(id, err.message || 'Failed to parse this file.'))
+        }
       } finally {
         processingRef.current.delete(id)
       }
     }
   }, [state.statements, state.userRules])
+
+  // Called when user enters a password for a locked file
+  const handleSubmitPassword = useCallback((statementId, password) => {
+    dispatch(actions.statementSetPassword(statementId, password))
+    // Trigger analysis for this specific file (re-run analyze, it'll pick up the pending file)
+    setTimeout(() => handleAnalyze(), 0)
+  }, [handleAnalyze])
+
+  // Called by "Continue with X files →" button — proceed to dashboard with partial data
+  const handleAnalyzeAvailable = useCallback(() => {
+    dispatch(actions.forceComplete())
+  }, [])
 
   const [demoLoading, setDemoLoading] = useState(false)
 
@@ -148,6 +191,10 @@ export default function App() {
       dispatch(actions.loadDemo(mockStatements))
       setDemoLoading(false)
     }, 1400)
+  }, [])
+
+  const handleLoadUploadDemo = useCallback(() => {
+    dispatch(actions.loadUploadDemo(createMockUploadPreview()))
   }, [])
 
   const handleExportCSV = useCallback(() => {
@@ -351,6 +398,9 @@ export default function App() {
                 onSetBankManual={(id, bank) =>
                   dispatch({ type: ACTIONS.SET_BANK_MANUAL, payload: { statementId: id, bankId: bank } })
                 }
+                onSubmitPassword={handleSubmitPassword}
+                onAnalyzeAvailable={handleAnalyzeAvailable}
+                onLoadUploadDemo={handleLoadUploadDemo}
               />
             </div>
 

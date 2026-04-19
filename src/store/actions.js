@@ -23,6 +23,15 @@ export const ACTIONS = {
   TOGGLE_INCLUDE_TRANSFERS: 'TOGGLE_INCLUDE_TRANSFERS',
   SET_BANK_MANUAL: 'SET_BANK_MANUAL',
   CLEAR_FILTERS: 'CLEAR_FILTERS',
+  // Password / inspection actions
+  STATEMENT_INSPECTING: 'STATEMENT_INSPECTING',
+  STATEMENT_PASSWORD_REQUIRED: 'STATEMENT_PASSWORD_REQUIRED',
+  STATEMENT_SET_PASSWORD: 'STATEMENT_SET_PASSWORD',
+  STATEMENT_WRONG_PASSWORD: 'STATEMENT_WRONG_PASSWORD',
+  STATEMENT_DUPLICATE: 'STATEMENT_DUPLICATE',
+  STATEMENT_UNSUPPORTED: 'STATEMENT_UNSUPPORTED',
+  FORCE_COMPLETE: 'FORCE_COMPLETE',
+  LOAD_UPLOAD_DEMO: 'LOAD_UPLOAD_DEMO',
 }
 
 // Action creators
@@ -113,4 +122,39 @@ export const actions = {
   }),
 
   clearFilters: () => ({ type: ACTIONS.CLEAR_FILTERS }),
+
+  // Password-flow actions
+  statementInspecting: (statementId) => ({
+    type: ACTIONS.STATEMENT_INSPECTING,
+    payload: statementId,
+  }),
+
+  statementPasswordRequired: (statementId) => ({
+    type: ACTIONS.STATEMENT_PASSWORD_REQUIRED,
+    payload: statementId,
+  }),
+
+  statementSetPassword: (statementId, password) => ({
+    type: ACTIONS.STATEMENT_SET_PASSWORD,
+    payload: { statementId, password },
+  }),
+
+  statementWrongPassword: (statementId) => ({
+    type: ACTIONS.STATEMENT_WRONG_PASSWORD,
+    payload: statementId,
+  }),
+
+  statementDuplicate: (statementId) => ({
+    type: ACTIONS.STATEMENT_DUPLICATE,
+    payload: statementId,
+  }),
+
+  statementUnsupported: (statementId, reason) => ({
+    type: ACTIONS.STATEMENT_UNSUPPORTED,
+    payload: { statementId, reason },
+  }),
+
+  forceComplete: () => ({ type: ACTIONS.FORCE_COMPLETE }),
+
+  loadUploadDemo: (statements) => ({ type: ACTIONS.LOAD_UPLOAD_DEMO, payload: statements }),
 }

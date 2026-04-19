@@ -11,7 +11,7 @@ function generateId() {
   return `stmt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
-export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onSetBankManual, onAnalyze, onLoadDemo, demoLoading = false }) {
+export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onSetBankManual, onAnalyze, onLoadDemo, demoLoading = false, onSubmitPassword, onAnalyzeAvailable, onLoadUploadDemo }) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragError, setDragError] = useState(null)
   const fileInputRef = useRef(null)
@@ -215,6 +215,8 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
           onRemove={onRemoveStatement}
           onSetBank={onSetBankManual}
           onAddMore={() => fileInputRef.current?.click()}
+          onSubmitPassword={onSubmitPassword}
+          onAnalyzeAvailable={onAnalyzeAvailable}
         />
       )}
 
@@ -259,6 +261,14 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
           className="mt-3 w-full py-2.5 rounded-xl bg-accent-light text-accent text-sm font-medium hover:bg-accent/10 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {demoLoading ? 'Loading sample data…' : 'Try with sample data'}
+        </button>
+      )}
+      {!hasFiles && onLoadUploadDemo && (
+        <button
+          onClick={onLoadUploadDemo}
+          className="mt-2 w-full py-2 rounded-xl border border-border-soft text-text-secondary text-xs font-medium hover:border-warning/60 hover:text-warning transition-all duration-150"
+        >
+          Preview password-protected upload flow
         </button>
       )}
     </div>

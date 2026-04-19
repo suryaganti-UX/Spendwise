@@ -62,9 +62,11 @@
 
   html {
     font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01', 'tnum' 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -165,6 +167,77 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* ── Typography scale ──────────────────────────────────────── */
+  /* Display: large hero headings */
+  .text-display {
+    font-size: 2.25rem;   /* 36px */
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  /* Heading: section / card headings */
+  .text-heading {
+    font-size: 1.125rem;  /* 18px */
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  /* Subheading: secondary section titles */
+  .text-subheading {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* Body: default prose text */
+  .text-body {
+    font-size: 0.875rem;  /* 14px */
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  /* Label: UI labels, button text */
+  .text-label {
+    font-size: 0.875rem;  /* 14px */
+    line-height: 1.25;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+  }
+
+  /* Meta: supporting copy, captions */
+  .text-meta {
+    font-size: 0.75rem;   /* 12px */
+    line-height: 1.5;
+    font-weight: 400;
+  }
+
+  /* Caption: smallest text, timestamps */
+  .text-caption {
+    font-size: 0.6875rem; /* 11px */
+    line-height: 1.4;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+
+  /* Eyebrow: uppercase label above headings */
+  .text-eyebrow {
+    font-size: 0.6875rem; /* 11px */
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Numeric: tabular numbers for financial data */
+  .text-numeric {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum', 'cv11';
   }
 
   .sr-only {

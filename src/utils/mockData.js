@@ -231,6 +231,76 @@ export const MOCK_HDFC_TRANSACTIONS = buildTransactions(HDFC_RAW, 'hdfc', '****3
 export const MOCK_ICICI_TRANSACTIONS = buildTransactions(ICICI_RAW, 'icici', '****9217')
 export const MOCK_SBI_TRANSACTIONS = buildTransactions(SBI_RAW, 'sbi', '****5601')
 
+/**
+ * Mock statements that simulate a mixed upload result to demo the password flow UI.
+ * Does NOT require real PDF files — purely for UI preview.
+ */
+export function createMockUploadPreview() {
+  return [
+    {
+      id: 'demo_upload_1',
+      filename: 'HDFC_Statement_Mar_2026.pdf',
+      bank: 'hdfc',
+      bankLabel: 'HDFC Bank',
+      bankColor: '#004C8F',
+      accountNumber: '****3842',
+      months: ['Jan 2026', 'Feb 2026', 'Mar 2026'],
+      transactions: MOCK_HDFC_TRANSACTIONS,
+      parseStatus: 'done',
+      parseProgress: 100,
+      parseError: null,
+      skippedLines: 2,
+      totalLines: 64,
+      transactionCount: MOCK_HDFC_TRANSACTIONS.length,
+      file: null,
+    },
+    {
+      id: 'demo_upload_2',
+      filename: 'ICICI_CreditCard_Statement.pdf',
+      bank: 'icici',
+      bankLabel: 'ICICI Bank',
+      bankColor: '#F37024',
+      accountNumber: '****9217',
+      months: [],
+      transactions: [],
+      parseStatus: 'password_required',
+      parseProgress: 0,
+      parseError: null,
+      passwordAttempts: 0,
+      file: null,
+    },
+    {
+      id: 'demo_upload_3',
+      filename: 'Axis_Savings_Q1_2026.pdf',
+      bank: 'axis',
+      bankLabel: 'Axis Bank',
+      bankColor: '#800000',
+      accountNumber: '****7731',
+      months: [],
+      transactions: [],
+      parseStatus: 'password_required',
+      parseProgress: 0,
+      parseError: 'wrong_password',
+      passwordAttempts: 1,
+      file: null,
+    },
+    {
+      id: 'demo_upload_4',
+      filename: 'SBI_Scanned_Statement.pdf',
+      bank: 'sbi',
+      bankLabel: 'State Bank of India',
+      bankColor: '#2B3B8F',
+      accountNumber: null,
+      months: [],
+      transactions: [],
+      parseStatus: 'error',
+      parseProgress: 0,
+      parseError: 'This PDF appears to be a scanned image. We need a text-based PDF.',
+      file: null,
+    },
+  ]
+}
+
 export function createMockStatements() {
   return [
     {

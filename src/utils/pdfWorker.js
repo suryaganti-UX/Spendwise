@@ -27,12 +27,36 @@ export async function getPDFJS() {
 }
 
 /**
- * Extract all text from a PDF file
- * @param {File} file - PDF File object
- * @param {Function} onProgress - callback(page, totalPages)
- * @returns {Promise<string>} - full extracted text
+ * Inspect a PDF to determine if it is password-protected, without full extraction.
+ * Returns 'ok' | 'password_required' | 'corrupted'
  */
-export async function extractPDFText(file, onProgress) {
+export async function inspectPDF(file) {
+  const pdfjs = await getPDFJS()
+  const arrayBuffer = await file.arrayBuffer()
+  try {
+    const pdf = await pdfjs.getDocument({
+      data: arrayBuffer,
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      useSystemFonts: true,
+    }).promise
+    pdf.destroy()
+    return 'ok'
+  } catch (err) {
+    if (err.name === 'PasswordException') return 'password_required'
+    return 'corrupted'
+  }
+}
+
+/**
+ * Extract all text from a PDF file, with optional password for protected files.
+ * @param {File} file - PDF File object
+ * @param {Function} onProgress - callback(fractionDone: 0–1)
+ * @param {string|null} password - optional password for protected PDFs
+ * @returns {Promise<string>} - full extracted text
+ * @throws errors with message: 'PASSWORD_PROTECTED' | 'WRONG_PASSWORD' | 'NO_TEXT_LAYER' | 'CORRUPTED'
+ */
+export async function extractPDFText(file, onProgress, password = null) {
   const pdfjs = await getPDFJS()
 
   // Read file as ArrayBuffer
@@ -40,24 +64,31 @@ export async function extractPDFText(file, onProgress) {
 
   let pdf
   try {
-    pdf = await pdfjs.getDocument({
+    const loadParams = {
       data: arrayBuffer,
       useWorkerFetch: false,
       isEvalSupported: false,
       useSystemFonts: true,
-    }).promise
+    }
+    if (password) loadParams.password = password
+
+    pdf = await pdfjs.getDocument(loadParams).promise
   } catch (err) {
     if (err.name === 'PasswordException') {
+      // PasswordResponses: 1 = NEED_PASSWORD, 2 = INCORRECT_PASSWORD
+      if (err.code === 2 || (password && err.name === 'PasswordException')) {
+        throw new Error('WRONG_PASSWORD')
+      }
       throw new Error('PASSWORD_PROTECTED')
     }
-    throw err
+    throw new Error('CORRUPTED')
   }
 
   const totalPages = pdf.numPages
   let fullText = ''
 
   for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-    if (onProgress) onProgress(pageNum, totalPages)
+    if (onProgress) onProgress(pageNum / totalPages)
 
     // Yield to UI every 10 pages
     if (pageNum % 10 === 0) {
@@ -86,6 +117,8 @@ export async function extractPDFText(file, onProgress) {
       console.warn(`Failed to extract page ${pageNum}:`, pageErr)
     }
   }
+
+  pdf.destroy()
 
   // Check if we got any text (might be scanned)
   const meaningfulText = fullText.replace(/\s+/g, '').length
