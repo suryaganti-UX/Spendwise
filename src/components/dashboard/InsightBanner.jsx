@@ -13,8 +13,10 @@ export function InsightBanner({ insights = [] }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.2 }}
-      className="bg-accent-light border border-accent/10 rounded-2xl p-4"
+      className="relative glass rounded-2xl p-4 overflow-hidden"
     >
+      {/* Top glow — emerald brand accent */}
+      <div className="absolute inset-x-0 top-0 h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(16,185,129,0.6), transparent)' }} aria-hidden="true" />
       <div className="flex items-center gap-2 mb-3">
         <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
           <Lightbulb className="w-4 h-4 text-white" aria-hidden="true" />
@@ -31,7 +33,7 @@ export function InsightBanner({ insights = [] }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ delay: i * 0.08 }}
-              className="flex items-start gap-2 bg-bg-secondary rounded-xl px-3 py-2.5 border border-border-soft"
+              className="flex items-start gap-2 bg-bg-tertiary/60 dark:bg-white/[0.04] rounded-xl px-3 py-2.5 border border-border-soft/60"
               style={{ borderLeft: `3px solid ${insight.color || '#10B981'}` }}
             >
               <span className="text-base leading-none mt-0.5 flex-shrink-0" aria-hidden="true">

@@ -1,12 +1,15 @@
 import React from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { formatINR, formatAxisAmount } from '../../utils/currency.js'
 import { Sparkline } from '../charts/Sparkline.jsx'
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-border-soft rounded-xl shadow-tooltip px-3 py-2 text-xs">
+    <div
+      className="rounded-xl px-3 py-2 text-xs"
+      style={{ background: 'rgba(15,18,30,0.92)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}
+    >
       <p className="font-semibold text-text-primary mb-1.5">{label}</p>
       {payload.map(p => (
         <div key={p.name} className="flex items-center justify-between gap-4">
@@ -14,7 +17,7 @@ function CustomTooltip({ active, payload, label }) {
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
             {p.name}
           </span>
-          <span className="font-semibold tabular-nums">{formatINR(p.value)}</span>
+          <span className="font-semibold tabular-nums text-text-primary">{formatINR(p.value)}</span>
         </div>
       ))}
     </div>
@@ -80,10 +83,19 @@ export function MonthlyComparison({ monthlyData = [], categoryTrends = [] }) {
       {/* Bar chart */}
       <div>
         <h4 className="text-sm font-semibold text-text-primary mb-3">Month-over-Month</h4>
+        {/* Custom legend */}
+        <div className="flex items-center gap-4 mb-3">
+          {[['Income', '#10B981'], ['Expenses', '#EF4444']].map(([label, color]) => (
+            <span key={label} className="flex items-center gap-1.5 text-xs text-text-secondary">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color }} />
+              {label}
+            </span>
+          ))}
+        </div>
         <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F0EDE9" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#A8A49F' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: '#A8A49F' }} axisLine={false} tickLine={false} tickFormatter={formatAxisAmount} width={48} />
               <Tooltip content={<CustomTooltip />} />

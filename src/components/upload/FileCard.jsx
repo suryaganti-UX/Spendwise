@@ -55,11 +55,13 @@ export function FileCard({ statement, onRemove, onSetBank, onSubmitPassword }) {
 
   const statusLabel = () => {
     if (parseStatus === 'error') {
-      if (parseError?.includes('scanned')) return 'Scanned image — text not readable'
-      if (parseError?.includes('No usable')) return 'No transactions found'
+      if (parseError?.includes('scanned')) return 'Scanned image — text not readable. Try downloading a text-based PDF from your bank.'
+      if (parseError?.includes('parse transactions') || parseError?.includes('No usable') || parseError?.includes('Could not parse'))
+        return 'No transactions found. This may not be a bank statement.'
+      if (parseError?.includes('PASSWORD_PROTECTED') || parseError?.includes('password')) return 'PDF is password-protected. Please unlock it first.'
       return parseError || 'Could not open this file'
     }
-    if (parseStatus === 'unsupported') return parseError || 'Unsupported format'
+    if (parseStatus === 'unsupported') return parseError || 'Unsupported format — try an HDFC, ICICI, SBI or Axis Bank statement PDF'
     if (isWrongPassword) return `Incorrect password${passwordAttempts > 1 ? ` (${passwordAttempts} attempts)` : ''} — try again`
     return meta.label
   }

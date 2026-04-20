@@ -14,6 +14,7 @@ export const INITIAL_STATE = {
   // Filters
   selectedBanks: [], // empty = all banks included
   selectedMonths: [], // empty = all months included
+  selectedStatements: [], // empty = all statements included (excluded IDs when toggled off)
   selectedCategory: null,
   typeFilter: 'all', // 'all' | 'debit' | 'credit'
   amountFilter: { min: null, max: null },
@@ -26,7 +27,7 @@ export const INITIAL_STATE = {
   sortOrder: 'desc',
 
   // UI state
-  darkMode: false,
+  darkMode: true,
   isDemoMode: false,
 
   // User-defined recategorization rules (session only)
@@ -237,6 +238,18 @@ export function reducer(state, action) {
       return { ...state, activeView: action.payload }
     }
 
+    case ACTIONS.TOGGLE_STATEMENT_FILTER: {
+      const stmtId = action.payload
+      const current = state.selectedStatements || []
+      const isExcluded = current.includes(stmtId)
+      return {
+        ...state,
+        selectedStatements: isExcluded
+          ? current.filter(id => id !== stmtId)
+          : [...current, stmtId],
+      }
+    }
+
     case ACTIONS.TOGGLE_BANK_FILTER: {
       const bankId = action.payload
       const current = state.selectedBanks
@@ -340,6 +353,7 @@ export function reducer(state, action) {
         isDemoMode: true,
         selectedBanks: [],
         selectedMonths: [],
+        selectedStatements: [],
       }
     }
 
@@ -386,6 +400,7 @@ export function reducer(state, action) {
         amountFilter: { min: null, max: null },
         dateFilter: { from: null, to: null },
         searchQuery: '',
+        selectedStatements: [],
       }
     }
 

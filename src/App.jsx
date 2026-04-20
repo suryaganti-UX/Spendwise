@@ -4,6 +4,7 @@ import { Upload, BarChart2 as BarChart, Cpu, Check, ShieldCheck, Lock } from 'lu
 import { reducer, INITIAL_STATE } from './store/reducer.js'
 import { actions, ACTIONS } from './store/actions.js'
 import { UploadZone } from './components/upload/UploadZone.jsx'
+import { ParseLoadingScreen } from './components/upload/ParseLoadingScreen.jsx'
 import { Dashboard } from './components/dashboard/Dashboard.jsx'
 import { getPDFJS, extractPDFText, inspectPDF } from './utils/pdfWorker.js'
 import { parseStatement } from './parsers/index.js'
@@ -232,6 +233,8 @@ export default function App() {
             selectedMonths={state.selectedMonths}
             onToggleBank={(bank) => dispatch(actions.toggleBankFilter(bank))}
             onToggleMonth={(month) => dispatch(actions.toggleMonthFilter(month))}
+            selectedStatements={state.selectedStatements || []}
+            onToggleStatement={(id) => dispatch(actions.toggleStatementFilter(id))}
             includeTransfers={state.includeTransfers}
             onToggleTransfers={() => dispatch({ type: ACTIONS.TOGGLE_INCLUDE_TRANSFERS })}
             selectedCategory={state.selectedCategory}
@@ -244,7 +247,11 @@ export default function App() {
             sortOrder={state.sortOrder}
             onSortChange={(by, order) => dispatch(actions.setSort(by, order))}
             onRecategorize={handleRecategorize}
-            onReset={() => dispatch(actions.reset())}
+            onReset={() => {
+              if (window.confirm('Upload a new statement? Your current analysis will be cleared.')) {
+                dispatch(actions.reset())
+              }
+            }}
             darkMode={state.darkMode}
             onToggleTheme={() => dispatch({ type: ACTIONS.TOGGLE_THEME })}
             isDemoMode={state.isDemoMode}
@@ -254,161 +261,219 @@ export default function App() {
     )
   }
 
-  // Default: show upload zone (covers idle, uploading, processing, error states)
+  // Parsing / loading state
+  const isProcessing = state.statements.some(s =>
+    ['parsing', 'inspecting'].includes(s.parseStatus)
+  )
+  if (isProcessing) {
+    return <ParseLoadingScreen statements={state.statements} />
+  }
+
+  // Default: show upload zone (covers idle, uploading, error states)
   const noFiles = !state.statements || state.statements.length === 0
 
-  const HOW_IT_WORKS = [
-    {
-      Icon: Upload,
-      title: 'Drop your statement PDFs',
-      desc: 'HDFC, ICICI, SBI or Axis — one or more files, any date range.',
-    },
-    {
-      Icon: Cpu,
-      title: 'Parsed locally in your browser',
-      desc: 'Every transaction is read and categorised on-device. Nothing touches a server.',
-    },
-    {
-      Icon: BarChart,
-      title: 'Full spending breakdown',
-      desc: 'Categories, monthly trends, top merchants, and recurring charges.',
-    },
-  ]
-
-  const BENEFITS = [
-    'Spending by category',
-    'Monthly trends',
-    'Top merchants',
-    'Recurring charges',
-    'Budget tracking',
-    'Multi-bank support',
-  ]
-
   return (
-    <div className="min-h-screen bg-bg-primary flex flex-col">
+    <div className="min-h-screen bg-bg-primary flex flex-col overflow-hidden">
+      {/* Ambient background glow orbs */}
+      <div
+        className="fixed top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at center top, rgba(16,185,129,0.09) 0%, transparent 65%)' }}
+        aria-hidden="true"
+      />
+      <div
+        className="fixed bottom-0 right-0 w-[600px] h-[400px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at bottom right, rgba(99,102,241,0.07) 0%, transparent 60%)' }}
+        aria-hidden="true"
+      />
+
       {/* Header */}
-      <header className="border-b border-border-soft bg-bg-secondary flex-shrink-0">
+      <header className="glass-header border-b border-border-soft flex-shrink-0 relative z-10">
         <div className="max-w-5xl mx-auto px-8 h-16 flex items-center justify-between">
           <span className="font-bold text-text-primary text-[17px] tracking-tight">
-            Spend<span className="text-accent">Wise</span>
+            Spend<span className="text-accent" style={{ textShadow: '0 0 20px rgba(16,185,129,0.4)' }}>Wise</span>
           </span>
-          <div className="hidden sm:flex items-center gap-2 text-text-hint">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-positive/10 border border-positive/20">
             <ShieldCheck className="w-3.5 h-3.5 text-positive flex-shrink-0" />
-            <span className="text-xs">Private by design · Indian bank statements</span>
+            <span className="text-xs font-medium text-positive">100% local processing</span>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-6 py-10">
+      <main className="flex-1 flex items-center justify-center px-6 py-10 relative z-10">
         <div className="w-full max-w-5xl">
-
-          {/* ── Two-panel hero card ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] border border-border-soft rounded-2xl overflow-hidden shadow-[0_2px_40px_rgba(0,0,0,0.06)]">
-
-            {/* Left: Value proposition */}
-            <div className="bg-bg-secondary p-10 xl:p-12 flex flex-col border-b lg:border-b-0 lg:border-r border-border-soft">
-
-              {/* Main content block */}
-              <div className="flex-1">
-                {/* Eyebrow */}
-                <p className="text-[11px] font-semibold text-accent uppercase tracking-[0.12em] mb-5">
-                  Personal finance · India
-                </p>
-
-                {/* Headline */}
-                <h1 className="text-[32px] lg:text-[36px] font-bold text-text-primary tracking-tight leading-[1.18] mb-4">
-                  Know exactly where<br />your money went.
-                </h1>
-
-                {/* Supporting text */}
-                <p className="text-sm text-text-secondary leading-[1.7] mb-8 max-w-[380px]">
-                  Drop a bank statement PDF. SpendWise reads every transaction, assigns categories,
-                  and shows you a clear financial picture — processed entirely in your browser.
-                </p>
-
-                {/* Benefits grid */}
-                <div className="grid grid-cols-2 gap-y-3 gap-x-6 mb-8">
-                  {BENEFITS.map(label => (
-                    <div key={label} className="flex items-center gap-2.5">
-                      <div className="w-4 h-4 rounded-full bg-positive/10 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-2.5 h-2.5 text-positive" />
-                      </div>
-                      <span className="text-xs text-text-secondary">{label}</span>
-                    </div>
-                  ))}
+          <AnimatePresence mode="wait">
+            {noFiles ? (
+              <motion.div
+                key="hero"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {/* ── Hero section ── */}
+                <div className="text-center mb-10">
+                  <motion.p
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05, duration: 0.35 }}
+                    className="text-[11px] font-semibold text-accent uppercase tracking-[0.15em] mb-4"
+                  >
+                    Personal finance · India
+                  </motion.p>
+                  <motion.h1
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className="font-display text-[42px] lg:text-[52px] text-text-primary leading-[1.1] tracking-tight mb-4"
+                  >
+                    Your money story.
+                    <br />
+                    <span className="text-accent" style={{ textShadow: '0 0 40px rgba(16,185,129,0.3)' }}>Instantly.</span>
+                  </motion.h1>
+                  <motion.p
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.18, duration: 0.35 }}
+                    className="text-sm text-text-secondary leading-relaxed max-w-md mx-auto"
+                  >
+                    Drop your bank statement. We read it here, in your browser.{' '}
+                    <span className="text-text-primary font-medium">Nothing leaves your device.</span>
+                  </motion.p>
                 </div>
 
-                {/* How it works — only when no files added */}
-                {noFiles && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1, duration: 0.25 }}
-                  >
-                    <p className="text-[10px] font-semibold text-text-hint uppercase tracking-[0.14em] mb-4">
-                      How it works
-                    </p>
-                    <div className="space-y-4">
-                      {HOW_IT_WORKS.map(({ Icon, title, desc }) => (
-                        <div key={title} className="flex items-start gap-3.5">
-                          <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Icon className="w-3.5 h-3.5 text-accent" />
+                {/* ── Two-panel card ── */}
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.22, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] glass rounded-3xl overflow-hidden border border-white/[0.07] shadow-[0_8px_60px_rgba(0,0,0,0.35)]"
+                >
+                  {/* Left: trust signals */}
+                  <div className="p-8 xl:p-10 flex flex-col border-b lg:border-b-0 lg:border-r border-white/[0.06]">
+                    <div className="flex-1">
+                      {/* Bank trust badges */}
+                      <p className="text-[10px] font-semibold text-text-hint uppercase tracking-[0.14em] mb-4">
+                        Supported banks
+                      </p>
+                      <div className="grid grid-cols-2 gap-2.5 mb-8">
+                        {[
+                          { name: 'HDFC Bank', color: '#004C8F', bg: 'rgba(0,76,143,0.12)', border: 'rgba(0,76,143,0.25)' },
+                          { name: 'ICICI Bank', color: '#F37024', bg: 'rgba(243,112,36,0.12)', border: 'rgba(243,112,36,0.25)' },
+                          { name: 'SBI', color: '#4a5fc1', bg: 'rgba(43,59,143,0.12)', border: 'rgba(43,59,143,0.25)' },
+                          { name: 'Axis Bank', color: '#c44d7a', bg: 'rgba(151,20,77,0.12)', border: 'rgba(151,20,77,0.25)' },
+                        ].map(bank => (
+                          <div
+                            key={bank.name}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                            style={{ background: bank.bg, border: `1px solid ${bank.border}` }}
+                          >
+                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: bank.color }} />
+                            <span className="text-xs font-semibold" style={{ color: bank.color }}>{bank.name}</span>
                           </div>
-                          <div>
-                            <p className="text-xs font-semibold text-text-primary leading-none mb-1">{title}</p>
-                            <p className="text-[11px] text-text-secondary leading-relaxed">{desc}</p>
+                        ))}
+                      </div>
+
+                      {/* Features list */}
+                      <p className="text-[10px] font-semibold text-text-hint uppercase tracking-[0.14em] mb-4">
+                        What you get
+                      </p>
+                      <div className="space-y-2.5 mb-8">
+                        {[
+                          'Spending by category',
+                          'Monthly trend charts',
+                          'Top merchants ranked',
+                          'Recurring charges detected',
+                          'Multi-bank merging',
+                          'CSV export',
+                        ].map(label => (
+                          <div key={label} className="flex items-center gap-2.5">
+                            <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                              <Check className="w-2.5 h-2.5 text-positive" />
+                            </div>
+                            <span className="text-xs text-text-secondary">{label}</span>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </motion.div>
-                )}
-              </div>
 
-              {/* Trust bar — always at bottom */}
-              <div className="mt-8 pt-6 border-t border-border-soft flex flex-wrap gap-x-5 gap-y-2">
-                <span className="flex items-center gap-1.5 text-[11px] text-text-hint">
-                  <ShieldCheck className="w-3.5 h-3.5 text-positive flex-shrink-0" />
-                  No data sent anywhere
-                </span>
-                <span className="flex items-center gap-1.5 text-[11px] text-text-hint">
-                  <Lock className="w-3.5 h-3.5 text-positive flex-shrink-0" />
-                  No account required
-                </span>
-                <span className="flex items-center gap-1.5 text-[11px] text-text-hint">
-                  <Cpu className="w-3.5 h-3.5 text-positive flex-shrink-0" />
-                  Runs in your browser
-                </span>
-              </div>
-            </div>
+                    {/* Privacy badge */}
+                    <div className="pt-6 border-t border-white/[0.06]">
+                      <div className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
+                        <ShieldCheck className="w-4 h-4 text-positive flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-semibold text-positive">100% local processing</p>
+                          <p className="text-[11px] text-text-hint mt-0.5 leading-relaxed">Your statement PDF never leaves your browser tab. No server, no account, no storage.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Right: Upload panel */}
-            <div className="bg-bg-primary p-8 flex flex-col">
-              <div className="mb-5">
-                <h2 className="text-sm font-semibold text-text-primary">Upload your statement</h2>
-                <p className="text-[12px] text-text-hint mt-1">PDF format · any date range · HDFC, ICICI, SBI, Axis</p>
-              </div>
-              <UploadZone
-                statements={state.statements}
-                onFilesSelected={handleFilesSelected}
-                onAnalyze={handleAnalyze}
-                onLoadDemo={handleLoadDemo}
-                demoLoading={demoLoading}
-                onRemoveStatement={(id) => dispatch(actions.removeStatement(id))}
-                onSetBankManual={(id, bank) =>
-                  dispatch({ type: ACTIONS.SET_BANK_MANUAL, payload: { statementId: id, bankId: bank } })
-                }
-                onSubmitPassword={handleSubmitPassword}
-                onAnalyzeAvailable={handleAnalyzeAvailable}
-                onLoadUploadDemo={handleLoadUploadDemo}
-              />
-            </div>
-
-          </div>
+                  {/* Right: upload panel */}
+                  <div className="p-8 flex flex-col" style={{ background: 'rgba(0,0,0,0.15)' }}>
+                    <div className="mb-5">
+                      <h2 className="text-base font-bold text-text-primary">Upload your statement</h2>
+                      <p className="text-[12px] text-text-hint mt-1">PDF format · any date range · HDFC, ICICI, SBI, Axis</p>
+                    </div>
+                    <UploadZone
+                      statements={state.statements}
+                      onFilesSelected={handleFilesSelected}
+                      onAnalyze={handleAnalyze}
+                      onLoadDemo={handleLoadDemo}
+                      demoLoading={demoLoading}
+                      onRemoveStatement={(id) => dispatch(actions.removeStatement(id))}
+                      onSetBankManual={(id, bank) =>
+                        dispatch({ type: ACTIONS.SET_BANK_MANUAL, payload: { statementId: id, bankId: bank } })
+                      }
+                      onSubmitPassword={handleSubmitPassword}
+                      onAnalyzeAvailable={handleAnalyzeAvailable}
+                      onLoadUploadDemo={handleLoadUploadDemo}
+                    />
+                  </div>
+                </motion.div>
+              </motion.div>
+            ) : (
+              /* Files added — compact header + upload zone */
+              <motion.div
+                key="uploading"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="glass rounded-3xl overflow-hidden border border-white/[0.07] shadow-[0_8px_60px_rgba(0,0,0,0.35)]"
+              >
+                <div className="p-6 border-b border-white/[0.06] flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-bold text-text-primary">Upload your statement</h2>
+                    <p className="text-[12px] text-text-hint mt-0.5">PDF format · HDFC, ICICI, SBI, Axis</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-positive/10 border border-positive/20">
+                    <ShieldCheck className="w-3 h-3 text-positive" />
+                    <span className="text-[11px] font-medium text-positive">Local only</span>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <UploadZone
+                    statements={state.statements}
+                    onFilesSelected={handleFilesSelected}
+                    onAnalyze={handleAnalyze}
+                    onLoadDemo={handleLoadDemo}
+                    demoLoading={demoLoading}
+                    onRemoveStatement={(id) => dispatch(actions.removeStatement(id))}
+                    onSetBankManual={(id, bank) =>
+                      dispatch({ type: ACTIONS.SET_BANK_MANUAL, payload: { statementId: id, bankId: bank } })
+                    }
+                    onSubmitPassword={handleSubmitPassword}
+                    onAnalyzeAvailable={handleAnalyzeAvailable}
+                    onLoadUploadDemo={handleLoadUploadDemo}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
 
-      <footer className="border-t border-border-soft py-4 text-center text-xs text-text-hint flex-shrink-0">
+      <footer className="relative z-10 border-t border-border-soft py-4 text-center text-xs text-text-hint flex-shrink-0">
         Runs entirely in your browser — no server, no account, no data stored.
       </footer>
     </div>

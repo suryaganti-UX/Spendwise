@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Search, ChevronDown, X, ChevronRight, ChevronLeft } from 'lucide-react'
 import { format } from 'date-fns'
-import { formatINR } from '../../utils/currency.js'
+import { formatINR, formatINRCompact } from '../../utils/currency.js'
 import { BankBadge } from '../ui/BankBadge.jsx'
 import { getCategoryById, CATEGORIES } from '../../constants/categories.js'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -334,6 +334,12 @@ export function TransactionList({
   )
 }
 
+// Detect UPI-style transaction descriptions
+function isUpiDescription(desc) {
+  if (!desc) return false
+  return /upi[/-]/i.test(desc) || /\S+@\S+/.test(desc) || /\bvpa\b/i.test(desc)
+}
+
 function TransactionRow({ txn, isExpanded, isHighlighted, onToggle, onRecategorize, recatDropdown, setRecatDropdown }) {
   const cat = getCategoryById(txn.category)
   const isDebit = txn.type === 'debit'
@@ -359,7 +365,7 @@ function TransactionRow({ txn, isExpanded, isHighlighted, onToggle, onRecategori
 
         {/* Description + meta */}
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-text-primary truncate">
+          <p className="text-xs font-medium text-text-primary truncate" title={txn.description}>
             {txn.description}
             {txn.userModified && (
               <span className="ml-1.5 text-2xs bg-accent-light text-accent px-1 rounded">edited</span>
@@ -367,6 +373,11 @@ function TransactionRow({ txn, isExpanded, isHighlighted, onToggle, onRecategori
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <BankBadge bankId={txn.bank} size="sm" />
+            {isUpiDescription(txn.description) && (
+              <span className="text-2xs px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 font-medium">
+                UPI Transfer
+              </span>
+            )}
             <span
               className="text-2xs px-1.5 py-0.5 rounded-full"
               style={{ backgroundColor: cat.color + '15', color: cat.color }}
@@ -381,8 +392,9 @@ function TransactionRow({ txn, isExpanded, isHighlighted, onToggle, onRecategori
           <p
             className={`text-sm font-bold tabular-nums ${isDebit ? 'text-negative' : 'text-positive'}`}
             aria-label={`${isDebit ? 'Debit' : 'Credit'}: ${formatINR(txn.amount)}`}
+            title={txn.amount >= 100000 ? formatINR(txn.amount) : undefined}
           >
-            {isDebit ? '-' : '+'}{formatINR(txn.amount)}
+            {isDebit ? '-' : '+'}{txn.amount >= 100000 ? formatINRCompact(txn.amount) : formatINR(txn.amount)}
           </p>
           {txn.balance != null && (
             <p className="text-2xs text-text-hint tabular-nums">Bal: {formatINR(txn.balance)}</p>

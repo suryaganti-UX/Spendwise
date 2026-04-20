@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 
 import { ViewTabs } from './ViewTabs.jsx'
 import { FilterBar } from './FilterBar.jsx'
-import { SummaryCards } from './SummaryCards.jsx'
+import { NarrativeDashboard } from './NarrativeDashboard.jsx'
 import { InsightBanner } from './InsightBanner.jsx'
 import { CategoryBreakdown } from './CategoryBreakdown.jsx'
 import { TopMerchants } from './TopMerchants.jsx'
@@ -34,6 +34,8 @@ import {
   getInsights,
   getDaysCovered,
   getByMonth,
+  detectDuplicates,
+  isShortPeriod,
 } from '../../utils/analytics.js'
 import { formatINR, formatINRCompact } from '../../utils/currency.js'
 import { downloadCSV, generateTextSummary, exportPDF } from '../../utils/export.js'
@@ -46,6 +48,8 @@ export function Dashboard({
   selectedMonths,
   onToggleBank,
   onToggleMonth,
+  selectedStatements,
+  onToggleStatement,
   includeTransfers,
   onToggleTransfers,
   selectedCategory,
@@ -68,21 +72,17 @@ export function Dashboard({
   const { budgets: savedBudgets, refresh: refreshBudgets } = useBudgets()
   const hasBudgets = Object.values(savedBudgets).some(v => v > 0)
 
-  // Active transactions (filtered by bank + month selections)
+  // Active transactions (filtered by statement selection)
   const activeTransactions = useMemo(() => {
     let txns = []
     for (const stmt of statements) {
-      if (selectedBanks.length > 0 && selectedBanks.includes(stmt.bank)) continue
+      if (selectedStatements.length > 0 && selectedStatements.includes(stmt.id)) continue
       for (const txn of stmt.transactions || []) {
-        if (selectedMonths.length > 0) {
-          const txnMonth = format(txn.date, 'MMM yyyy')
-          if (selectedMonths.includes(txnMonth)) continue
-        }
         txns.push(txn)
       }
     }
     return txns
-  }, [statements, selectedBanks, selectedMonths])
+  }, [statements, selectedStatements])
 
   // Analytics
   const income = useMemo(() => getTotalIncome(activeTransactions), [activeTransactions])
@@ -91,12 +91,14 @@ export function Dashboard({
   const savingsRate = useMemo(() => getSavingsRate(income, expenses), [income, expenses])
   const categories = useMemo(() => getByCategory(activeTransactions), [activeTransactions])
   const dailyData = useMemo(() => getDailySpend(activeTransactions), [activeTransactions])
-  const merchants = useMemo(() => getTopMerchants(activeTransactions, 8), [activeTransactions])
+  const merchants = useMemo(() => getTopMerchants(activeTransactions, 10), [activeTransactions])
   const largestExpenses = useMemo(() => getLargestExpenses(activeTransactions, 5), [activeTransactions])
   const subscriptions = useMemo(() => getSubscriptions(activeTransactions), [activeTransactions])
   const insights = useMemo(() => getInsights(activeTransactions), [activeTransactions])
   const daysCovered = useMemo(() => getDaysCovered(activeTransactions), [activeTransactions])
   const monthlyData = useMemo(() => getCrossMonthTrend(activeTransactions), [activeTransactions])
+  const duplicates = useMemo(() => detectDuplicates(activeTransactions), [activeTransactions])
+  const shortPeriod = useMemo(() => isShortPeriod(activeTransactions), [activeTransactions])
 
   const creditCount = activeTransactions.filter(t => t.type === 'credit').length
   const debitCount = activeTransactions.filter(t => t.type === 'debit').length
@@ -117,7 +119,7 @@ export function Dashboard({
   // By bank data for bank split view
   const bankData = useMemo(() => {
     return statements
-      .filter(s => selectedBanks.length === 0 || !selectedBanks.includes(s.bank))
+      .filter(s => selectedStatements.length === 0 || !selectedStatements.includes(s.id))
       .map(stmt => {
         const txns = stmt.transactions || []
         const cats = getByCategory(txns)
@@ -183,11 +185,11 @@ export function Dashboard({
       )}
 
       {/* Header */}
-      <header className="border-b border-border-soft bg-bg-secondary sticky top-0 z-20">
+      <header className="glass-header border-b border-border-soft sticky top-0 z-20">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="font-bold text-text-primary text-base tracking-tight">
-              Spend<span className="text-accent">Wise</span>
+            <span className="font-bold text-text-primary text-[15px] tracking-tight">
+              Spend<span className="text-accent" style={{ textShadow: '0 0 20px rgba(16,185,129,0.4)' }}>Wise</span>
             </span>
             {statements.length > 0 && (
               <span className="hidden sm:inline text-xs text-text-hint">
@@ -271,12 +273,9 @@ export function Dashboard({
         <div className="space-y-3">
           <ViewTabs activeView={activeView} onViewChange={onViewChange} banks={availableBanks} />
           <FilterBar
-            availableBanks={availableBanks}
-            availableMonths={availableMonths}
-            selectedBanks={selectedBanks}
-            selectedMonths={selectedMonths}
-            onToggleBank={onToggleBank}
-            onToggleMonth={onToggleMonth}
+            statements={statements}
+            selectedStatements={selectedStatements}
+            onToggleStatement={onToggleStatement}
             includeTransfers={includeTransfers}
             onToggleTransfers={onToggleTransfers}
           />
@@ -290,10 +289,8 @@ export function Dashboard({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="space-y-5"
             >
-              {/* Summary cards */}
-              <SummaryCards
+              <NarrativeDashboard
                 income={income}
                 expenses={expenses}
                 savings={savings}
@@ -302,66 +299,28 @@ export function Dashboard({
                 creditCount={creditCount}
                 debitCount={debitCount}
                 daysCovered={daysCovered}
-                banks={availableBanks}
+                shortPeriod={shortPeriod}
+                duplicates={duplicates}
+                categories={categories}
+                merchants={merchants}
+                largestExpenses={largestExpenses}
                 dailyData={dailyData}
+                monthlyData={monthlyData}
+                activeTransactions={activeTransactions}
+                statements={statements}
+                availableMonths={availableMonths}
+                subscriptions={subscriptions}
+                selectedCategory={selectedCategory}
+                onCategorySelect={onCategorySelect}
+                searchQuery={searchQuery}
+                onSearchChange={onSearchChange}
+                typeFilter={typeFilter}
+                onTypeFilterChange={onTypeFilterChange}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortChange={onSortChange}
+                onRecategorize={onRecategorize}
               />
-
-              {/* Insights */}
-              <InsightBanner insights={insights} />
-
-              {/* Category + Merchants (2 col) */}
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-                <Card className="lg:col-span-3">
-                  <CategoryBreakdown
-                    categories={categories}
-                    selectedCategory={selectedCategory}
-                    onCategorySelect={onCategorySelect}
-                    totalIncome={income}
-                  />
-                </Card>
-                <Card className="lg:col-span-2">
-                  <TopMerchants
-                    merchants={merchants}
-                    largestExpenses={largestExpenses}
-                  />
-                </Card>
-              </div>
-
-              {/* Sankey flow — placed after category breakdown for context */}
-              {income > 0 && categories.length > 0 && (
-                <Card>
-                  <SankeyFlow income={income} categories={categories.slice(0, 10)} />
-                </Card>
-              )}
-
-              {/* Calendar heatmap */}
-              <Card>
-                <CalendarHeatmap transactions={activeTransactions} />
-              </Card>
-
-              {/* Spending trend */}
-              <Card>
-                <SpendingTrend dailyData={dailyData} />
-              </Card>
-
-              {/* Subscriptions / Recurring detection */}
-              {subscriptions.length > 0 && (
-                <Card>
-                  <SubscriptionDetector subscriptions={subscriptions} />
-                </Card>
-              )}
-
-              {/* Budget tracker summary — renders only when budgets are saved */}
-              {hasBudgets && (
-                <Card>
-                  <BudgetSummaryCard
-                    categorySpend={Object.fromEntries(
-                      categories.map(c => [c.category, c.total])
-                    )}
-                    onOpen={() => setShowBudgets(true)}
-                  />
-                </Card>
-              )}
             </motion.div>
           )}
 

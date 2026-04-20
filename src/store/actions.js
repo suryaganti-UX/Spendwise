@@ -10,6 +10,7 @@ export const ACTIONS = {
   SET_VIEW: 'SET_VIEW',
   TOGGLE_BANK_FILTER: 'TOGGLE_BANK_FILTER',
   TOGGLE_MONTH_FILTER: 'TOGGLE_MONTH_FILTER',
+  TOGGLE_STATEMENT_FILTER: 'TOGGLE_STATEMENT_FILTER',
   SET_CATEGORY: 'SET_CATEGORY',
   SET_SEARCH: 'SET_SEARCH',
   SET_SORT: 'SET_SORT',
@@ -68,6 +69,11 @@ export const actions = {
   toggleMonthFilter: (month) => ({
     type: ACTIONS.TOGGLE_MONTH_FILTER,
     payload: month,
+  }),
+
+  toggleStatementFilter: (statementId) => ({
+    type: ACTIONS.TOGGLE_STATEMENT_FILTER,
+    payload: statementId,
   }),
 
   setCategory: (category) => ({

@@ -479,3 +479,161 @@ export function getDaysCovered(transactions) {
   const max = Math.max(...dates)
   return Math.ceil((max - min) / (1000 * 60 * 60 * 24)) + 1
 }
+
+/**
+ * Detect likely duplicate transactions.
+ * Two txns are a suspected duplicate when they share the same
+ * type + amount (exact) + normalized description within ±1 day.
+ * Returns { count, pairs } where pairs is an array of [id1, id2].
+ */
+export function detectDuplicates(transactions) {
+  const pairs = []
+  const seen = new Set()
+
+  for (let i = 0; i < transactions.length; i++) {
+    for (let j = i + 1; j < transactions.length; j++) {
+      const a = transactions[i]
+      const b = transactions[j]
+      const key = a.id + '|' + b.id
+      if (seen.has(key)) continue
+
+      if (
+        a.type === b.type &&
+        a.amount === b.amount &&
+        normalizeMerchantName(a.description) === normalizeMerchantName(b.description) &&
+        Math.abs(differenceInDays(a.date, b.date)) <= 1
+      ) {
+        pairs.push([a.id, b.id])
+        seen.add(key)
+      }
+    }
+  }
+
+  return { count: pairs.length, pairs }
+}
+
+/**
+ * Check if the covered period is very short (< 7 days).
+ * Used to surface a warning banner on the dashboard.
+ */
+export function isShortPeriod(transactions) {
+  if (!transactions || transactions.length < 2) return false
+  return getDaysCovered(transactions) < 7
+}
+
+/**
+ * Get monthly spend totals for a specific normalized merchant name.
+ * Returns an array of totals sorted oldest-first — useful for sparklines.
+ */
+export function getMerchantMonthlyTrend(transactions, merchantName) {
+  const months = {}
+  for (const txn of transactions) {
+    if (txn.type !== 'debit') continue
+    const name = normalizeMerchantName(txn.description)
+    if (name !== merchantName) continue
+    const monthKey = format(txn.date, 'MMM yyyy')
+    if (!months[monthKey]) months[monthKey] = 0
+    months[monthKey] += txn.amount
+  }
+  return Object.entries(months)
+    .sort(([a], [b]) => new Date(a) - new Date(b))
+    .map(([, total]) => total)
+}
+
+/**
+ * Generate exactly 3 curated narrative insights for the InsightFeed component.
+ * Prioritises: top-category → MoM change or savings alert → biggest transaction / top merchant.
+ */
+export function generateNarrativeInsights(transactions, monthlyData = []) {
+  const insights = []
+
+  const income = getTotalIncome(transactions)
+  const expenses = getTotalExpenses(transactions)
+  const savingsRate = getSavingsRate(income, expenses)
+  const categories = getByCategory(transactions)
+  const merchants = getTopMerchants(transactions, 5)
+
+  // 1 — Top spend category
+  if (categories.length > 0) {
+    const top = categories[0]
+    insights.push({
+      icon: top.emoji || '💸',
+      color: top.color,
+      headline: `${top.label} topped your spending`,
+      value: formatINR(top.total),
+      subtext: `${Math.round(top.percentage)}% of all expenses`,
+      type: 'top_category',
+    })
+  }
+
+  // 2 — Month-over-month change OR savings health
+  if (monthlyData.length >= 2) {
+    const latest = monthlyData[monthlyData.length - 1]
+    const prev = monthlyData[monthlyData.length - 2]
+    const change = prev.expenses > 0 ? ((latest.expenses - prev.expenses) / prev.expenses) * 100 : 0
+    if (Math.abs(change) >= 5) {
+      insights.push({
+        icon: change > 0 ? '📈' : '📉',
+        color: change > 0 ? '#EF4444' : '#10B981',
+        headline: `Spending ${change > 0 ? 'up' : 'down'} ${Math.abs(change).toFixed(0)}% vs last month`,
+        value: formatINR(Math.abs(latest.expenses - prev.expenses)),
+        subtext: `${latest.month} vs ${prev.month}`,
+        type: 'mom_change',
+      })
+    } else {
+      _pushSavingsInsight(insights, income, expenses, savingsRate)
+    }
+  } else {
+    _pushSavingsInsight(insights, income, expenses, savingsRate)
+  }
+
+  // 3 — Biggest single transaction or top merchant
+  const largest = getLargestExpenses(transactions, 1)[0]
+  if (largest && largest.amount >= 10000) {
+    const name = normalizeMerchantName(largest.description)
+    insights.push({
+      icon: '🚨',
+      color: '#F97316',
+      headline: 'One large transaction detected',
+      value: formatINR(largest.amount),
+      subtext: name,
+      type: 'large_txn',
+    })
+  } else if (merchants.length > 0) {
+    const m = merchants[0]
+    insights.push({
+      icon: '📦',
+      color: '#8B5CF6',
+      headline: `${m.name} visited most`,
+      value: `${m.count} transactions`,
+      subtext: formatINR(m.total) + ' total',
+      type: 'top_merchant',
+    })
+  }
+
+  return insights.slice(0, 3)
+}
+
+function _pushSavingsInsight(insights, income, expenses, savingsRate) {
+  if (income <= 0) return
+  if (savingsRate < 10) {
+    const pct = Math.round((expenses / income) * 100)
+    insights.push({
+      icon: '⚠️',
+      color: '#EF4444',
+      headline: 'High spending alert',
+      value: `${pct}% of income spent`,
+      subtext: 'Consider reducing non-essentials',
+      type: 'savings_alert',
+    })
+  } else {
+    insights.push({
+      icon: savingsRate >= 30 ? '🎉' : '📈',
+      color: '#10B981',
+      headline: savingsRate >= 30 ? 'Excellent savings month!' : 'Healthy savings rate',
+      value: `${Math.round(savingsRate)}% saved`,
+      subtext: formatINR(income - expenses) + ' set aside',
+      type: 'savings_health',
+    })
+  }
+}

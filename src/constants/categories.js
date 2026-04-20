@@ -14,7 +14,7 @@ export const CATEGORIES = [
   {
     id: 'rent',
     label: 'Rent & Housing',
-    color: '#84CC16',
+    color: '#6366F1',
     emoji: '🏠',
     priority: 2,
     keywords: [
@@ -27,7 +27,7 @@ export const CATEGORIES = [
   {
     id: 'investments',
     label: 'Investments & Savings',
-    color: '#0EA5E9',
+    color: '#14B8A6',
     emoji: '📈',
     priority: 3,
     keywords: [
@@ -54,7 +54,7 @@ export const CATEGORIES = [
   {
     id: 'grocery',
     label: 'Groceries & Supermarket',
-    color: '#22C55E',
+    color: '#10B981',
     emoji: '🛒',
     priority: 5,
     keywords: [
@@ -93,7 +93,7 @@ export const CATEGORIES = [
   {
     id: 'travel',
     label: 'Travel',
-    color: '#D946EF',
+    color: '#EC4899',
     emoji: '✈️',
     priority: 8,
     keywords: [
@@ -149,7 +149,7 @@ export const CATEGORIES = [
   {
     id: 'education',
     label: 'Education & Learning',
-    color: '#3B82F6',
+    color: '#8B5CF6',
     emoji: '📚',
     priority: 12,
     keywords: [
@@ -162,7 +162,7 @@ export const CATEGORIES = [
   {
     id: 'insurance',
     label: 'Insurance & Finance',
-    color: '#A855F7',
+    color: '#6366F1',
     emoji: '🛡️',
     priority: 13,
     keywords: [
@@ -189,7 +189,7 @@ export const CATEGORIES = [
   {
     id: 'charity',
     label: 'Charity & Gifts',
-    color: '#F472B6',
+    color: '#14B8A6',
     emoji: '🎁',
     priority: 15,
     keywords: [
@@ -213,7 +213,7 @@ export const CATEGORIES = [
   {
     id: 'atm',
     label: 'ATM & Cash',
-    color: '#F43F5E',
+    color: '#F59E0B',
     emoji: '🏧',
     priority: 17,
     keywords: [
@@ -223,7 +223,7 @@ export const CATEGORIES = [
   {
     id: 'others',
     label: 'Others',
-    color: '#CBD5E1',
+    color: '#94A3B8',
     emoji: '📦',
     priority: 99,
     keywords: [],

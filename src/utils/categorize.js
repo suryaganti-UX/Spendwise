@@ -62,6 +62,13 @@ export function categorizeTransaction(txn, userRules = []) {
     return 'income'
   }
 
+  // UPI transfer patterns (e.g. "UPI-JOHN@okicici", "Pay to user@upi", "VPA upi@bank")
+  const isUpiTransfer =
+    /upi[/-]/i.test(txn.description || '') ||
+    /\S+@\S+/.test(txn.description || '') ||
+    /\bvpa\b/i.test(txn.description || '')
+  if (isUpiTransfer && txn.type === 'debit') return 'transfers'
+
   // Sort categories by priority, check keywords
   const sorted = [...CATEGORIES].sort((a, b) => a.priority - b.priority)
   for (const category of sorted) {

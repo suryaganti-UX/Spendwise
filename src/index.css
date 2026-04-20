@@ -32,27 +32,27 @@
 }
 
 .dark {
-  /* Surfaces */
-  --sw-bg-primary:    15  15  14;   /* near-black */
-  --sw-bg-secondary:  26  26  24;   /* dark card */
-  --sw-bg-tertiary:   38  38  36;   /* subtle divider */
+  /* Deep navy — dark finance aesthetic */
+  --sw-bg-primary:    10  15  30;   /* #0A0F1E */
+  --sw-bg-secondary:  17  24  39;   /* #111827 */
+  --sw-bg-tertiary:   26  34  52;   /* #1A2234 */
   /* Borders */
-  --sw-border-soft:   48  48  46;
-  --sw-border-medium: 62  62  60;
+  --sw-border-soft:   31  41  60;
+  --sw-border-medium: 45  56  80;
   /* Text */
-  --sw-text-primary:   245 243 239;
-  --sw-text-secondary: 154 150 144;
-  --sw-text-hint:       90  86  82;
-  /* Accent (brighter for dark bg) */
-  --sw-accent:        52 211 153;
-  --sw-accent-light:   2  44  34;
-  --sw-accent-hover: 110 231 183;
-  /* Status (softer for dark bg) */
-  --sw-positive: 34 197 94;
+  --sw-text-primary:   240 244 252;
+  --sw-text-secondary: 148 163 184;
+  --sw-text-hint:       71  85 105;
+  /* Accent — emerald on navy */
+  --sw-accent:        16 185 129;   /* #10B981 */
+  --sw-accent-light:   5  30  22;
+  --sw-accent-hover:  52 211 153;   /* #34D399 */
+  /* Status */
+  --sw-positive:  34 197  94;
   --sw-negative: 248 113 113;
-  --sw-warning:  251 191 36;
+  --sw-warning:  251 191  36;
   /* Shadow */
-  --sw-shadow-card: 0 4px 24px rgba(0,0,0,.40);
+  --sw-shadow-card: 0 8px 40px rgba(0,0,0,.60);
 }
 
 @layer base {
@@ -131,7 +131,37 @@
   }
 }
 
+/* Animated dashed border for drop zone */
+@keyframes dash-march {
+  to { stroke-dashoffset: -20; }
+}
+
 @layer components {
+  /* Glassmorphism ─────────────────────────────────────────── */
+  /* Light: solid card  |  Dark: frosted glass over deep navy  */
+  .glass {
+    background: rgb(var(--sw-bg-secondary));
+    border: 1px solid rgb(var(--sw-border-soft));
+  }
+  .dark .glass {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Header glass — less opaque for stickiness clarity */
+  .glass-header {
+    background: rgba(247, 245, 241, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .dark .glass-header {
+    background: rgba(10, 15, 30, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
   .card {
     @apply bg-bg-secondary border border-border-soft rounded-2xl p-5 transition-shadow duration-200;
   }
