@@ -115,24 +115,26 @@ export function FileCard({ statement, onRemove, onSetBank, onSubmitPassword }) {
 
           {/* Status / metadata row */}
           {parseStatus === 'pending' && (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-start gap-2 flex-wrap mt-0.5">
               {bank && bank !== 'unknown' ? (
                 <>
                   <BankBadge bankId={bank} size="sm" />
                   <span className="text-xs text-text-hint">Bank detected</span>
                 </>
               ) : (
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex flex-col gap-1.5 w-full">
                   <span className="text-xs text-text-hint">Select bank:</span>
-                  {Object.values(BANKS).map(b => (
-                    <button
-                      key={b.id}
-                      onClick={() => onSetBank?.(id, b.id)}
-                      className="px-2 py-0.5 text-xs rounded-full border border-border-soft hover:border-accent hover:text-accent transition-colors"
-                    >
-                      {b.shortLabel}
-                    </button>
-                  ))}
+                  <div className="flex flex-wrap gap-1">
+                    {Object.values(BANKS).map(b => (
+                      <button
+                        key={b.id}
+                        onClick={() => onSetBank?.(id, b.id)}
+                        className="px-2 py-0.5 text-xs rounded-full border border-border-soft hover:border-accent hover:text-accent transition-colors"
+                      >
+                        {b.shortLabel}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -156,7 +158,7 @@ export function FileCard({ statement, onRemove, onSetBank, onSubmitPassword }) {
           )}
 
           {parseStatus === 'done' && (
-            <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-secondary mt-0.5">
               <BankBadge bankId={bank} size="sm" />
               {transactionCount > 0 && (
                 <span className="text-positive font-medium">{transactionCount} transactions</span>
@@ -167,7 +169,7 @@ export function FileCard({ statement, onRemove, onSetBank, onSubmitPassword }) {
               {skippedLines > 0 && (
                 <span className="flex items-center gap-1 text-warning">
                   <AlertTriangle className="w-3 h-3" />
-                  {skippedLines} transaction{skippedLines > 1 ? 's' : ''} couldn’t be read — excluded from analysis
+                  {skippedLines} couldn’t be read
                 </span>
               )}
             </div>
@@ -232,4 +234,3 @@ export function FileCard({ statement, onRemove, onSetBank, onSubmitPassword }) {
     </motion.div>
   )
 }
-

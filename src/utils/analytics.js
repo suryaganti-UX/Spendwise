@@ -587,14 +587,14 @@ export function generateNarrativeInsights(transactions, monthlyData = []) {
     _pushSavingsInsight(insights, income, expenses, savingsRate)
   }
 
-  // 3 — Biggest single transaction or top merchant
+  // 3 — Biggest single transaction OR top merchant OR weekend spend pattern
   const largest = getLargestExpenses(transactions, 1)[0]
   if (largest && largest.amount >= 10000) {
     const name = normalizeMerchantName(largest.description)
     insights.push({
       icon: '🚨',
       color: '#F97316',
-      headline: 'One large transaction detected',
+      headline: 'Largest single transaction',
       value: formatINR(largest.amount),
       subtext: name,
       type: 'large_txn',
@@ -609,6 +609,22 @@ export function generateNarrativeInsights(transactions, monthlyData = []) {
       subtext: formatINR(m.total) + ' total',
       type: 'top_merchant',
     })
+  } else {
+    // Final fallback: weekend vs weekday spending
+    const debits = transactions.filter(t => t.type === 'debit')
+    const weekendSpend = debits.filter(t => { const d = new Date(t.date).getDay(); return d === 0 || d === 6 }).reduce((s, t) => s + t.amount, 0)
+    const weekdaySpend = debits.reduce((s, t) => s + t.amount, 0) - weekendSpend
+    if (weekendSpend > 0 || weekdaySpend > 0) {
+      const pct = Math.round((weekendSpend / (weekendSpend + weekdaySpend)) * 100)
+      insights.push({
+        icon: '🏖️',
+        color: '#F59E0B',
+        headline: 'Weekend spending share',
+        value: `${pct}%`,
+        subtext: `${formatINR(weekendSpend)} on weekends`,
+        type: 'weekend_spend',
+      })
+    }
   }
 
   return insights.slice(0, 3)

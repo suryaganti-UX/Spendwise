@@ -9,7 +9,7 @@ import { Dashboard } from './components/dashboard/Dashboard.jsx'
 import { getPDFJS, extractPDFText, inspectPDF } from './utils/pdfWorker.js'
 import { parseStatement } from './parsers/index.js'
 import { categorizeAll } from './utils/categorize.js'
-import { createMockStatements, createMockUploadPreview } from './utils/mockData.js'
+import { createMockStatements } from './utils/mockData.js'
 import { downloadCSV } from './utils/export.js'
 import { format } from 'date-fns'
 import { getBankById } from './constants/banks.js'
@@ -194,10 +194,6 @@ export default function App() {
     }, 1400)
   }, [])
 
-  const handleLoadUploadDemo = useCallback(() => {
-    dispatch(actions.loadUploadDemo(createMockUploadPreview()))
-  }, [])
-
   const handleExportCSV = useCallback(() => {
     const txns = []
     for (const stmt of state.statements) {
@@ -274,27 +270,34 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-bg-primary flex flex-col overflow-hidden">
-      {/* Ambient background glow orbs */}
+      {/* Ambient glow — subtle tints, light-mode-safe */}
       <div
         className="fixed top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at center top, rgba(16,185,129,0.09) 0%, transparent 65%)' }}
+        style={{ background: 'radial-gradient(ellipse at center top, rgba(16,185,129,0.06) 0%, transparent 65%)' }}
         aria-hidden="true"
       />
       <div
         className="fixed bottom-0 right-0 w-[600px] h-[400px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at bottom right, rgba(99,102,241,0.07) 0%, transparent 60%)' }}
+        style={{ background: 'radial-gradient(ellipse at bottom right, rgba(99,102,241,0.05) 0%, transparent 60%)' }}
         aria-hidden="true"
       />
 
       {/* Header */}
       <header className="glass-header border-b border-border-soft flex-shrink-0 relative z-10">
-        <div className="max-w-5xl mx-auto px-8 h-16 flex items-center justify-between">
-          <span className="font-bold text-text-primary text-[17px] tracking-tight">
-            Spend<span className="text-accent" style={{ textShadow: '0 0 20px rgba(16,185,129,0.4)' }}>Wise</span>
-          </span>
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-positive/10 border border-positive/20">
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 h-14 flex items-center justify-between">
+          {/* Logo pill — matches dashboard header style */}
+          <div
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
+            style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
+          >
+            <span className="font-bold text-accent text-[15px] tracking-tight">
+              Spend<span className="text-text-primary dark:text-white">Wise</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-positive/10 border border-positive/20">
             <ShieldCheck className="w-3.5 h-3.5 text-positive flex-shrink-0" />
-            <span className="text-xs font-medium text-positive">100% local processing</span>
+            <span className="hidden sm:inline text-xs font-medium text-positive">100% local processing</span>
+            <span className="sm:hidden text-xs font-medium text-positive">Local only</span>
           </div>
         </div>
       </header>
@@ -346,10 +349,10 @@ export default function App() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.22, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                  className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] glass rounded-3xl overflow-hidden border border-white/[0.07] shadow-[0_8px_60px_rgba(0,0,0,0.35)]"
+                  className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] bg-bg-secondary rounded-3xl overflow-hidden border border-border-soft shadow-[var(--sw-shadow-md)] dark:shadow-[0_8px_60px_rgba(0,0,0,0.5)]"
                 >
                   {/* Left: trust signals */}
-                  <div className="p-8 xl:p-10 flex flex-col border-b lg:border-b-0 lg:border-r border-white/[0.06]">
+                  <div className="p-8 xl:p-10 flex flex-col border-b lg:border-b-0 lg:border-r border-border-soft">
                     <div className="flex-1">
                       {/* Bank trust badges */}
                       <p className="text-[10px] font-semibold text-text-hint uppercase tracking-[0.14em] mb-4">
@@ -397,7 +400,7 @@ export default function App() {
                     </div>
 
                     {/* Privacy badge */}
-                    <div className="pt-6 border-t border-white/[0.06]">
+                    <div className="pt-6 border-t border-border-soft">
                       <div className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
                         <ShieldCheck className="w-4 h-4 text-positive flex-shrink-0 mt-0.5" />
                         <div>
@@ -409,7 +412,7 @@ export default function App() {
                   </div>
 
                   {/* Right: upload panel */}
-                  <div className="p-8 flex flex-col" style={{ background: 'rgba(0,0,0,0.15)' }}>
+                  <div className="p-8 flex flex-col bg-bg-tertiary dark:bg-black/15">
                     <div className="mb-5">
                       <h2 className="text-base font-bold text-text-primary">Upload your statement</h2>
                       <p className="text-[12px] text-text-hint mt-1">PDF format · any date range · HDFC, ICICI, SBI, Axis</p>
@@ -426,7 +429,6 @@ export default function App() {
                       }
                       onSubmitPassword={handleSubmitPassword}
                       onAnalyzeAvailable={handleAnalyzeAvailable}
-                      onLoadUploadDemo={handleLoadUploadDemo}
                     />
                   </div>
                 </motion.div>
@@ -439,9 +441,9 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.35, ease: 'easeOut' }}
-                className="glass rounded-3xl overflow-hidden border border-white/[0.07] shadow-[0_8px_60px_rgba(0,0,0,0.35)]"
+                className="bg-bg-secondary rounded-3xl overflow-hidden border border-border-soft shadow-[var(--sw-shadow-md)] dark:shadow-[0_8px_60px_rgba(0,0,0,0.5)]"
               >
-                <div className="p-6 border-b border-white/[0.06] flex items-center justify-between">
+                <div className="px-6 py-4 border-b border-border-soft flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-bold text-text-primary">Upload your statement</h2>
                     <p className="text-[12px] text-text-hint mt-0.5">PDF format · HDFC, ICICI, SBI, Axis</p>
@@ -464,7 +466,6 @@ export default function App() {
                     }
                     onSubmitPassword={handleSubmitPassword}
                     onAnalyzeAvailable={handleAnalyzeAvailable}
-                    onLoadUploadDemo={handleLoadUploadDemo}
                   />
                 </div>
               </motion.div>

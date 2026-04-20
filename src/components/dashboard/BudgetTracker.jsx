@@ -149,6 +149,13 @@ export function BudgetPanel({ isOpen, onClose, categorySpend = {} }) {
   const [saveFlash, setSaveFlash] = useState(false)
   const [showAll, setShowAll] = useState(false)
 
+  // Suggested budget = 110% of current spend, rounded up to nearest 100
+  const suggestedBudget = useCallback((catId) => {
+    const spend = categorySpend[catId] || 0
+    if (spend <= 0) return ''
+    return String(Math.ceil((spend * 1.1) / 100) * 100)
+  }, [categorySpend])
+
   useEffect(() => {
     if (!isOpen) return
     const b = loadBudgets()
@@ -344,29 +351,54 @@ export function BudgetPanel({ isOpen, onClose, categorySpend = {} }) {
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }} className="px-5 py-4"
                   >
-                    <p className="text-xs text-text-secondary mb-4 leading-relaxed">
-                      Set a monthly limit for each category. Leave blank to skip.
-                    </p>
-                    <div className="space-y-0.5">
-                      {EXPENSE_CATS.map((cat, i) => (
-                        <motion.div key={cat.id}
-                          initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.025 }}
-                          className="flex items-center gap-3 py-2.5 border-b border-border-soft/40"
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs text-text-secondary leading-relaxed">
+                        Set a monthly limit per category.
+                      </p>
+                      {Object.values(categorySpend).some(v => v > 0) && (
+                        <button
+                          onClick={() => setEditValues(v => {
+                            const next = { ...v }
+                            for (const cat of EXPENSE_CATS) {
+                              if (!next[cat.id]) next[cat.id] = suggestedBudget(cat.id)
+                            }
+                            return next
+                          })}
+                          className="text-[11px] font-medium text-accent hover:underline flex-shrink-0 ml-3"
                         >
-                          <span className="text-base w-6 text-center flex-shrink-0">{cat.emoji}</span>
-                          <span className="text-xs font-medium text-text-secondary flex-1 min-w-0 truncate">{cat.label}</span>
-                          <div className="relative flex-shrink-0">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-text-hint select-none">Rs</span>
-                            <input type="number" min="0" placeholder="0"
-                              value={editValues[cat.id] || ''}
-                              onChange={e => setEditValues(v => ({ ...v, [cat.id]: e.target.value }))}
-                              className="w-28 pl-8 pr-3 py-2 text-xs border border-border-soft rounded-lg bg-bg-primary text-text-primary placeholder:text-text-hint focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
-                              aria-label={`Monthly budget for ${cat.label}`}
-                            />
-                          </div>
-                        </motion.div>
-                      ))}
+                          Auto-fill from spending
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-0.5">
+                      {EXPENSE_CATS.map((cat, i) => {
+                        const suggested = suggestedBudget(cat.id)
+                        return (
+                          <motion.div key={cat.id}
+                            initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.025 }}
+                            className="flex items-center gap-3 py-2.5 border-b border-border-soft/40"
+                          >
+                            <span className="text-base w-6 text-center flex-shrink-0">{cat.emoji}</span>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-medium text-text-secondary block truncate">{cat.label}</span>
+                              {suggested && !editValues[cat.id] && (
+                                <span className="text-[10px] text-text-hint">Avg: ₹{Number(suggested).toLocaleString('en-IN')}</span>
+                              )}
+                            </div>
+                            <div className="relative flex-shrink-0">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-text-hint select-none">₹</span>
+                              <input type="number" min="0"
+                                placeholder={suggested || '0'}
+                                value={editValues[cat.id] || ''}
+                                onChange={e => setEditValues(v => ({ ...v, [cat.id]: e.target.value }))}
+                                className="w-28 pl-6 pr-3 py-2 text-xs border border-border-soft rounded-lg bg-bg-primary text-text-primary placeholder:text-text-hint focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
+                                aria-label={`Monthly budget for ${cat.label}`}
+                              />
+                            </div>
+                          </motion.div>
+                        )
+                      })}
                     </div>
                   </motion.div>
                 )}

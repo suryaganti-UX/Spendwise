@@ -13,10 +13,13 @@ export function setUserRules(rules) {
 }
 
 /**
- * Clean a description for keyword matching
+ * Clean a description for keyword matching.
+ * Strips common payment rail prefixes so "UPI-Swiggy" → "swiggy"
+ * and "NEFT/Amazon Pay" → "amazon pay" before lowercasing.
  */
 function cleanForMatching(desc) {
   return (desc || '')
+    .replace(/^(upi[-/\s]+|neft[-/\s]+|imps[-/\s]+|rtgs[-/\s]+)/i, '') // strip payment prefix
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
@@ -24,7 +27,10 @@ function cleanForMatching(desc) {
 }
 
 /**
- * Categorize a single transaction
+ * Categorize a single transaction.
+ * Strategy: keywords always win over heuristics.
+ * Order: user rules → income/refund → keyword scan → UPI transfer detection → others
+ *
  * @param {Object} txn - Transaction object
  * @param {Array} userRules - Session user-defined rules
  * @returns {string} - category id
@@ -33,44 +39,32 @@ export function categorizeTransaction(txn, userRules = []) {
   const desc = cleanForMatching(txn.description)
   const allRules = [...(userRules || []), ...SESSION_RULES]
 
-  // Apply user-defined rules first (session learning)
+  // 1. Apply user-defined rules first (session learning)
   for (const rule of allRules) {
     if (rule.keyword && desc.includes(rule.keyword.toLowerCase())) {
       return rule.category
     }
   }
 
-  // Special rules
-  // Credit transactions with high amount → bias toward income
+  // 2. Refunds / cashbacks → income regardless of type
+  if (desc.includes('refund') || desc.includes('cashback') || desc.includes('reversal')) {
+    return 'income'
+  }
+
+  // 3. Large credits → bias toward income if no merchant keyword matches
   if (txn.type === 'credit' && txn.amount > 10000) {
     const incomeKeywords = CATEGORY_MAP['income']?.keywords || []
     for (const kw of incomeKeywords) {
       if (desc.includes(kw.toLowerCase())) return 'income'
     }
-    // Large credits without specific keywords → still might be income
-    if (!desc.includes('refund') && !desc.includes('cashback')) {
-      // Check if it's clearly not something else
-      const hasOtherMatch = CATEGORIES
-        .filter(c => c.id !== 'income' && c.id !== 'others' && c.id !== 'transfers')
-        .some(c => c.keywords.some(kw => desc.includes(kw.toLowerCase())))
-      if (!hasOtherMatch) return 'income'
-    }
+    const hasOtherMatch = CATEGORIES
+      .filter(c => c.id !== 'income' && c.id !== 'others' && c.id !== 'transfers')
+      .some(c => c.keywords.some(kw => desc.includes(kw.toLowerCase())))
+    if (!hasOtherMatch) return 'income'
   }
 
-  // Refunds → mark as credit type income
-  if (desc.includes('refund') || desc.includes('cashback') || desc.includes('reversal')) {
-    return 'income'
-  }
-
-  // UPI transfer patterns — person-to-person only (e.g. "UPI/abc@okicici", bare VPA)
-  // Carefully exclude well-known merchant names that carry "upi" as a prefix
-  // by only matching when the description has NO recognisable merchant keyword.
-  const rawDesc = txn.description || ''
-  const isVpaPattern = /\S+@(okicici|oksbi|okaxis|okhdfcbank|ybl|upi|paytm|axl|ibl|rbl|apl|fbl|barodampay|hsbc|allbank|augbank|boi|cnrb|csbpay|dcb|dbs|ezeepay|fbl|hdfcbank|icici|idbi|idfcbank|indus|jsbp|kbl|kotak|kvb|lvb|mahb|pnb|psb|rbl|scb|sib|srcb|tjsb|uco|unionbank|vjb|waaxis)$/i.test(rawDesc)
-  const isBareUpiRef = /^(upi|neft|imps|rtgs)[\s/-]/i.test(rawDesc) && !/swiggy|zomato|amazon|flipkart|netflix|spotify|hotstar|uber|ola|irctc|rapido|groww|zerodha|lic|apollo|pharmacy|petrol|diesel|electricity|gas|broadband|airtel|jio/i.test(rawDesc)
-  if ((isVpaPattern || isBareUpiRef) && txn.type === 'debit') return 'transfers'
-
-  // Sort categories by priority, check keywords
+  // 4. Priority-ordered keyword scan against all categories.
+  //    This runs BEFORE transfer detection so "UPI-Swiggy" → food, not transfers.
   const sorted = [...CATEGORIES].sort((a, b) => a.priority - b.priority)
   for (const category of sorted) {
     if (category.id === 'others') continue
@@ -79,6 +73,16 @@ export function categorizeTransaction(txn, userRules = []) {
         return category.id
       }
     }
+  }
+
+  // 5. Only if NO keyword matched: detect UPI/NEFT person-to-person transfers
+  if (txn.type === 'debit') {
+    const rawDesc = txn.description || ''
+    // VPA pattern: abc@okicici at the END of description
+    const isVpaPattern = /\S+@(okicici|oksbi|okaxis|okhdfcbank|ybl|upi|paytm|axl|ibl|rbl|apl|fbl|barodampay|hsbc|allbank|augbank|boi|cnrb|csbpay|dcb|dbs|ezeepay|hdfcbank|icici|idbi|idfcbank|indus|jsbp|kbl|kotak|kvb|lvb|mahb|pnb|psb|scb|sib|srcb|tjsb|uco|unionbank|vjb|waaxis)$/i.test(rawDesc)
+    // Bare UPI/NEFT/IMPS/RTGS prefix with no recognisable merchant name
+    const isBareUpiRef = /^(upi|neft|imps|rtgs)[\s/-]/i.test(rawDesc)
+    if (isVpaPattern || isBareUpiRef) return 'transfers'
   }
 
   return 'others'

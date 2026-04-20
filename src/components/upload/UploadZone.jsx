@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react'
-import { FileText, Lock, Upload, ChevronRight, AlertCircle, Download } from 'lucide-react'
+import { FileText, Lock, Upload, FolderOpen, ChevronRight, AlertCircle, Download } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BANKS } from '../../constants/banks.js'
 import { FileQueue } from './FileQueue.jsx'
@@ -19,7 +19,7 @@ function humanizeError(raw) {
   return raw
 }
 
-export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onSetBankManual, onAnalyze, onLoadDemo, demoLoading = false, onSubmitPassword, onAnalyzeAvailable, onLoadUploadDemo }) {
+export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onSetBankManual, onAnalyze, onLoadDemo, demoLoading = false, onSubmitPassword, onAnalyzeAvailable }) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragError, setDragError] = useState(null)
   const fileInputRef = useRef(null)
@@ -112,7 +112,7 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
             ? 'linear-gradient(135deg, rgba(16,185,129,0.6), rgba(52,211,153,0.4), rgba(16,185,129,0.6))'
             : dragError
               ? 'linear-gradient(135deg, rgba(239,68,68,0.5), rgba(248,113,113,0.3))'
-              : 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
+              : 'rgb(var(--sw-border-soft))',
         }}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -134,7 +134,7 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
             width="calc(100% - 2px)" height="calc(100% - 2px)"
             rx="13" ry="13"
             fill="none"
-            stroke={isDragging ? '#10B981' : dragError ? '#EF4444' : 'rgba(255,255,255,0.12)'}
+            stroke={isDragging ? '#10B981' : dragError ? '#EF4444' : 'rgb(var(--sw-border-medium))'}
             strokeWidth="1.5"
             strokeDasharray="6 4"
             style={{
@@ -151,7 +151,7 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
               ? 'rgba(16,185,129,0.06)'
               : dragError
                 ? 'rgba(239,68,68,0.04)'
-                : 'rgba(255,255,255,0.015)',
+                : 'rgb(var(--sw-bg-secondary))',
           }}
         >
           <div className="flex flex-col items-center text-center">
@@ -174,7 +174,7 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
                         ? (i === 1 ? '#10B981' : 'rgba(16,185,129,0.5)')
                         : dragError
                           ? (i === 1 ? '#EF4444' : 'rgba(239,68,68,0.4)')
-                          : (i === 1 ? '#10B981' : 'rgba(255,255,255,0.15)'),
+                          : (i === 1 ? '#10B981' : 'rgb(var(--sw-border-medium))'),
                     }}
                   />
                 </div>
@@ -208,7 +208,7 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
                   Multiple files from different banks · PDF only · Max 10 MB
                 </p>
                 <span className="inline-flex items-center gap-1.5 text-sm text-accent font-medium px-3.5 py-1.5 rounded-lg transition-colors" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                  <Upload className="w-3.5 h-3.5" />
+                  <FolderOpen className="w-3.5 h-3.5" />
                   Click to browse
                 </span>
               </>
@@ -263,8 +263,7 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="mt-4 w-full flex items-center justify-between px-4 py-3 rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+          className="mt-4 w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-bg-tertiary border border-border-soft"
         >
           <div className="text-sm text-text-secondary">
             <span className="font-semibold text-text-primary">{readyCount}</span> {readyCount === 1 ? 'file' : 'files'} ready
@@ -292,29 +291,19 @@ export function UploadZone({ statements, onFilesSelected, onRemoveStatement, onS
       {!hasFiles && (
         <>
           <div className="mt-5 flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+            <div className="flex-1 h-px bg-border-soft" />
             <span className="text-[11px] text-text-hint">or try a demo</span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+            <div className="flex-1 h-px bg-border-soft" />
           </div>
 
           <button
             onClick={onLoadDemo}
             disabled={demoLoading}
-            className="mt-3 w-full py-2.5 rounded-xl text-accent text-sm font-medium transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}
+            className="mt-3 w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', color: '#059669' }}
           >
-            {demoLoading ? 'Loading sample data…' : 'Try with sample data →'}
+            {demoLoading ? 'Loading sample data…' : '✦ Try with sample data →'}
           </button>
-
-          {onLoadUploadDemo && (
-            <button
-              onClick={onLoadUploadDemo}
-              className="mt-2 w-full py-2 rounded-xl text-text-hint text-xs font-medium transition-all duration-150 hover:text-text-secondary"
-              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              Preview password-protected upload flow
-            </button>
-          )}
         </>
       )}
     </div>

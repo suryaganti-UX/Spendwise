@@ -27,7 +27,7 @@ export const INITIAL_STATE = {
   sortOrder: 'desc',
 
   // UI state
-  darkMode: true,
+  darkMode: false,
   isDemoMode: false,
 
   // User-defined recategorization rules (session only)

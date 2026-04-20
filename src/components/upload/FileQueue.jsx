@@ -123,15 +123,40 @@ export function FileQueue({ statements, onRemove, onSetBank, onAddMore, onSubmit
       <div className="border border-border-soft rounded-2xl overflow-hidden bg-bg-secondary">
 
         {/* Sticky header: count + status chips + search */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border-soft bg-bg-secondary">
-          {/* Count */}
-          <div className="flex items-baseline gap-1.5 flex-shrink-0">
-            <span className="text-[15px] font-bold text-text-primary tabular-nums">{total}</span>
-            <span className="text-xs text-text-hint">{total === 1 ? 'file' : 'files'}</span>
+        <div className="px-4 py-3 border-b border-border-soft bg-bg-secondary space-y-2">
+          {/* Top row: count + search */}
+          <div className="flex items-center justify-between gap-3">
+            {/* Count */}
+            <div className="flex items-baseline gap-1.5 flex-shrink-0">
+              <span className="text-[15px] font-bold text-text-primary tabular-nums">{total}</span>
+              <span className="text-xs text-text-hint">{total === 1 ? 'file' : 'files'}</span>
+            </div>
+
+            {/* Search input */}
+            <div className="relative flex-shrink-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-text-hint pointer-events-none" />
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search files…"
+                aria-label="Search uploaded files"
+                className="pl-7 pr-6 py-1.5 w-32 text-[11px] rounded-lg border border-border-soft bg-bg-primary text-text-primary placeholder:text-text-hint focus:outline-none focus:border-accent focus:w-44 focus:ring-1 focus:ring-accent/20 transition-all duration-200"
+              />
+              {query && (
+                <button
+                  onClick={() => setQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-text-hint hover:text-text-primary"
+                  aria-label="Clear search"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Status chips */}
-          <div className="flex items-center gap-1.5 flex-1 flex-wrap">
+          {/* Status chips row */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             {doneCount > 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-positive/10 text-positive text-[11px] font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-positive" />
@@ -161,28 +186,6 @@ export function FileQueue({ statements, onRemove, onSetBank, onAddMore, onSubmit
                 <span className="w-1.5 h-1.5 rounded-full bg-negative" />
                 {errorCount} excluded
               </span>
-            )}
-          </div>
-
-          {/* Search input */}
-          <div className="relative flex-shrink-0">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-text-hint pointer-events-none" />
-            <input
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Search files…"
-              aria-label="Search uploaded files"
-              className="pl-7 pr-6 py-1.5 w-36 text-[11px] rounded-lg border border-border-soft bg-bg-primary text-text-primary placeholder:text-text-hint focus:outline-none focus:border-accent focus:w-48 focus:ring-1 focus:ring-accent/20 transition-all duration-200"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-hint hover:text-text-primary"
-                aria-label="Clear search"
-              >
-                <X className="w-3 h-3" />
-              </button>
             )}
           </div>
         </div>

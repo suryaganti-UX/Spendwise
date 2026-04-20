@@ -66,9 +66,9 @@ export function FilterBar({
               color: bank.color,
               borderColor: bank.color + '40',
             } : !isOff ? {
-              backgroundColor: 'rgba(255,255,255,0.06)',
-              color: 'rgba(255,255,255,0.7)',
-              borderColor: 'rgba(255,255,255,0.15)',
+              backgroundColor: 'rgb(var(--sw-accent-light))',
+              color: 'rgb(var(--sw-accent))',
+              borderColor: 'rgba(16,185,129,0.25)',
             } : {}}
             aria-pressed={!isOff}
           >

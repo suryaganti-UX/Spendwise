@@ -24,8 +24,8 @@ function Section({ id, label, title, subtitle, children }) {
     >
       {label && (
         <div className="flex items-center gap-3 mb-4">
-          <span className="text-[10px] font-bold text-accent/60 uppercase tracking-[0.18em]">{label}</span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
+          <span className="text-[10px] font-bold text-accent/70 uppercase tracking-[0.18em]">{label}</span>
+          <div className="flex-1 h-px bg-border-soft" />
         </div>
       )}
       {title && (
@@ -115,8 +115,8 @@ export function NarrativeDashboard({
             className="flex items-start gap-3 px-4 py-3 rounded-xl"
             style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
           >
-            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-300">
+            <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-700 dark:text-amber-300">
               <span className="font-semibold">Short period ({daysCovered} days) —</span> insights may be limited. For best results, upload a full monthly statement.
             </p>
           </motion.div>
@@ -131,8 +131,8 @@ export function NarrativeDashboard({
             className="flex items-start gap-3 px-4 py-3 rounded-xl"
             style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}
           >
-            <Info className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-indigo-300">
+            <Info className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-indigo-700 dark:text-indigo-300">
               <span className="font-semibold">{duplicates.count} possible duplicate transaction{duplicates.count > 1 ? 's' : ''} found.</span>{' '}
               Review them in the transactions list below — they may affect your totals.
             </p>
@@ -171,10 +171,7 @@ export function NarrativeDashboard({
         title="Where Did It Go?"
         subtitle="Click any category to reveal its top merchants"
       >
-        <div
-          className="rounded-2xl p-6"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
-        >
+        <div className="section-card">
           <CategoryBreakdown
             categories={categories}
             selectedCategory={selectedCategory}
@@ -191,10 +188,7 @@ export function NarrativeDashboard({
         title="Your Top Merchants"
         subtitle="Ranked by total spend this period"
       >
-        <div
-          className="rounded-2xl p-6"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
-        >
+        <div className="section-card">
           <TopMerchants
             merchants={merchants}
             transactions={activeTransactions}
@@ -210,10 +204,7 @@ export function NarrativeDashboard({
         label="05 / Trend"
         subtitle="Toggle between daily, weekly, and category views"
       >
-        <div
-          className="rounded-2xl p-6"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
-        >
+        <div className="section-card">
           <SpendingTrend dailyData={dailyData} categories={categories} />
         </div>
       </Section>
@@ -227,8 +218,7 @@ export function NarrativeDashboard({
       >
         <div
           ref={txnRef}
-          className="rounded-2xl p-6"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="section-card"
         >
           <TransactionList
             transactions={activeTransactions}

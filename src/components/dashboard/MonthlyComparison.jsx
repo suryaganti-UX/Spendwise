@@ -8,9 +8,9 @@ function CustomTooltip({ active, payload, label }) {
   return (
     <div
       className="rounded-xl px-3 py-2 text-xs"
-      style={{ background: 'rgba(15,18,30,0.92)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'rgb(var(--sw-bg-secondary))', border: '1px solid rgb(var(--sw-border-soft))', backdropFilter: 'blur(8px)', boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}
     >
-      <p className="font-semibold text-text-primary mb-1.5">{label}</p>
+      <p className="font-semibold text-text-primary mb-1.5 text-xs">{label}</p>
       {payload.map(p => (
         <div key={p.name} className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-1.5 text-text-secondary">
@@ -95,7 +95,7 @@ export function MonthlyComparison({ monthlyData = [], categoryTrends = [] }) {
         <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--sw-border-soft))" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#A8A49F' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: '#A8A49F' }} axisLine={false} tickLine={false} tickFormatter={formatAxisAmount} width={48} />
               <Tooltip content={<CustomTooltip />} />

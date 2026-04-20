@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { TrendingUp, TrendingDown, PiggyBank, CalendarDays } from 'lucide-react'
+import { TrendingUp, TrendingDown, PiggyBank, CalendarDays, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { NumberCounter } from '../charts/NumberCounter.jsx'
 import { formatINR, formatINRCompact } from '../../utils/currency.js'
 
@@ -25,48 +25,43 @@ function SavingsArc({ rate = 0 }) {
     <div className="relative flex flex-col items-center select-none">
       <svg
         viewBox="0 0 200 110"
-        width="200"
-        height="110"
+        width="180"
+        height="99"
         aria-label={`Savings rate: ${Math.round(rate)}%. ${healthLabel}`}
         role="img"
       >
-        {/* Background track — top semicircle (M left A rx ry ... sweep=0 M right) */}
+        {/* Background track */}
         <path
           d="M 28 100 A 72 72 0 0 0 172 100"
           fill="none"
-          stroke="rgba(255,255,255,0.07)"
-          strokeWidth="11"
+          stroke="currentColor"
+          className="text-border-medium"
+          strokeWidth="10"
           strokeLinecap="round"
         />
-        {/* Colored fill — animates via CSS transition on stroke-dasharray */}
+        {/* Colored fill */}
         <path
           d="M 28 100 A 72 72 0 0 0 172 100"
           fill="none"
           stroke={color}
-          strokeWidth="11"
+          strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={`${filled} ${circumference}`}
           style={{
             transition: 'stroke-dasharray 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.35s',
-            filter: `drop-shadow(0 0 6px ${color}60)`,
+            filter: `drop-shadow(0 0 5px ${color}50)`,
           }}
         />
-        {/* Axis labels */}
-        <text x="22" y="114" fontSize="9" fill="rgba(255,255,255,0.25)" textAnchor="middle">0%</text>
-        <text x="178" y="114" fontSize="9" fill="rgba(255,255,255,0.25)" textAnchor="middle">100%</text>
+        <text x="22" y="114" fontSize="8" fill="currentColor" className="fill-text-hint" textAnchor="middle">0%</text>
+        <text x="178" y="114" fontSize="8" fill="currentColor" className="fill-text-hint" textAnchor="middle">100%</text>
       </svg>
 
       {/* Centered label over the arc */}
-      <div className="absolute flex flex-col items-center" style={{ top: 44 }}>
-        <span
-          className="font-display text-[2.2rem] leading-none tabular-nums"
-          style={{ color }}
-        >
+      <div className="absolute flex flex-col items-center" style={{ top: 36 }}>
+        <span className="font-bold text-[1.75rem] leading-none tabular-nums" style={{ color }}>
           {Math.round(rate)}
         </span>
-        <span className="text-[9px] font-semibold text-text-hint uppercase tracking-[0.12em] mt-1">
-          / 100
-        </span>
+        <span className="text-[9px] font-semibold text-text-hint uppercase tracking-widest mt-0.5">/ 100</span>
         <span
           className="text-[10px] font-semibold mt-1.5 px-2 py-0.5 rounded-full"
           style={{ background: `${color}18`, color }}
@@ -78,44 +73,49 @@ function SavingsArc({ rate = 0 }) {
   )
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-function HeroStatCard({ title, value, sub, icon: Icon, color, formatter, delay = 0 }) {
+// ─── Fintech Stat Card — inspired by Sakuku colored metric cards ──────────────
+function HeroStatCard({ title, value, sub, icon: Icon, accentColor, bgColor, borderColor, formatter, delay = 0, prefix = '' }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
-      className="relative rounded-2xl p-5 overflow-hidden flex flex-col"
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(12px)',
-      }}
+      transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
+      className="stat-card flex flex-col gap-3"
     >
-      {/* Top glow line */}
-      <div
-        className="absolute inset-x-0 top-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${color}80, transparent)` }}
-        aria-hidden="true"
-      />
-      <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 flex-shrink-0"
-        style={{ background: `${color}18` }}
-        aria-hidden="true"
-      >
-        <Icon className="w-[18px] h-[18px]" style={{ color }} />
+      {/* Top row: icon chip + trend indicator */}
+      <div className="flex items-start justify-between">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: bgColor }}
+          aria-hidden="true"
+        >
+          <Icon className="w-[17px] h-[17px]" style={{ color: accentColor }} />
+        </div>
+        {/* Colored accent dot — matches Sakuku top bar stripe */}
+        <div className="w-2 h-2 rounded-full mt-1" style={{ background: accentColor }} aria-hidden="true" />
       </div>
-      <div
-        className="font-display text-[1.9rem] leading-none mb-1.5 tabular-nums"
-        style={{ color }}
-        aria-label={`${title}: ${formatINR(typeof value === 'number' ? value : 0)}`}
-      >
-        {typeof value === 'number' ? (
-          <NumberCounter value={value} formatter={formatter || formatINRCompact} />
-        ) : value}
+
+      {/* Value */}
+      <div>
+        <p className="text-[10px] font-semibold text-text-hint uppercase tracking-[0.1em] mb-1">{title}</p>
+        <div
+          className="font-bold text-[1.6rem] leading-none tabular-nums text-text-primary"
+          aria-label={`${title}: ${formatINR(typeof value === 'number' ? value : 0)}`}
+        >
+          {prefix}
+          {typeof value === 'number' ? (
+            <NumberCounter value={value} formatter={formatter || formatINRCompact} />
+          ) : value}
+        </div>
       </div>
-      <p className="text-[10px] font-semibold text-text-hint uppercase tracking-[0.1em]">{title}</p>
-      {sub && <p className="text-xs text-text-hint mt-0.5">{sub}</p>}
+
+      {/* Sub label with colored accent bar */}
+      {sub && (
+        <div className="flex items-center gap-1.5">
+          <div className="w-8 h-0.5 rounded-full" style={{ background: accentColor }} aria-hidden="true" />
+          <p className="text-xs text-text-secondary">{sub}</p>
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -133,122 +133,73 @@ export function HeroSection({
   availableMonths = [],
 }) {
   const savingsColor = savings >= 0 ? '#10B981' : '#EF4444'
+  const savingsPositive = savings >= 0
 
   // Build statement period chip text
   const bankLabels = [...new Set(statements.map(s => s.bankLabel).filter(Boolean))]
   const period = availableMonths.length > 1
     ? `${availableMonths[0]} – ${availableMonths[availableMonths.length - 1]}`
     : availableMonths[0] || 'All time'
-  const chipText = [bankLabels.slice(0, 2).join(', '), period, `${transactionCount} transactions`]
-    .filter(Boolean).join(' · ')
-
-  const microInsight = income > 0
-    ? savings >= 0
-      ? `You saved ${formatINR(savings)} this period`
-      : `You overspent by ${formatINR(Math.abs(savings))} this period`
-    : null
+  const chipText = [bankLabels.slice(0, 2).join(', '), period].filter(Boolean).join(' · ')
 
   return (
-    <div
-      className="relative rounded-3xl overflow-hidden p-7 lg:p-10"
-      style={{
-        background: 'linear-gradient(135deg, rgba(10,15,30,0.95) 0%, rgba(17,24,39,0.90) 100%)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '0 12px 80px rgba(0,0,0,0.4)',
-      }}
-    >
-      {/* Ambient glow top-left */}
-      <div
-        className="absolute top-0 left-0 w-96 h-56 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at top left, rgba(16,185,129,0.12) 0%, transparent 65%)' }}
-        aria-hidden="true"
-      />
-      {/* Ambient glow bottom-right */}
-      <div
-        className="absolute bottom-0 right-0 w-72 h-48 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at bottom right, rgba(99,102,241,0.08) 0%, transparent 60%)' }}
-        aria-hidden="true"
-      />
-
-      <div className="relative">
-        {/* Eyebrow */}
-        <motion.p
-          initial={{ opacity: 0, y: 6 }}
+    <div className="space-y-4">
+      {/* Period chip */}
+      {chipText && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="text-[10px] font-semibold text-accent uppercase tracking-[0.18em] mb-5"
+          className="flex items-center gap-2"
         >
-          Your month at a glance
-        </motion.p>
+          <CalendarDays className="w-3.5 h-3.5 text-text-hint flex-shrink-0" aria-hidden="true" />
+          <span className="text-xs font-medium text-text-secondary">{chipText}</span>
+          <span className="text-text-hint text-xs">·</span>
+          <span className="text-xs text-text-hint">{transactionCount} transactions</span>
+        </motion.div>
+      )}
 
-        {/* 3 stat cards — 2-col on mobile (income+spends), savings full-width below; 3-col from sm */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 [&>*:last-child]:col-span-2 [&>*:last-child]:sm:col-span-1">
-          <HeroStatCard
-            title="Total Income"
-            value={income}
-            sub={`${creditCount} credits`}
-            icon={TrendingUp}
-            color="#10B981"
-            delay={0}
-          />
-          <HeroStatCard
-            title="Total Spends"
-            value={expenses}
-            sub={`${debitCount} debits`}
-            icon={TrendingDown}
-            color="#EF4444"
-            delay={0.07}
-          />
-          <HeroStatCard
-            title="Net Savings"
-            value={Math.abs(savings)}
-            sub={`${Math.round(savingsRate)}% of income`}
-            icon={PiggyBank}
-            color={savingsColor}
-            delay={0.14}
-            formatter={(v) => (savings < 0 ? '−' : '') + formatINRCompact(v)}
-          />
-        </div>
-
-        {/* Statement period chip */}
-        {chipText && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.3 }}
-            className="flex items-center gap-2 mb-8"
-          >
-            <CalendarDays className="w-3.5 h-3.5 text-text-hint flex-shrink-0" />
-            <span
-              className="text-xs font-medium px-3 py-1.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)' }}
-            >
-              {chipText}
-            </span>
-          </motion.div>
-        )}
-
-        {/* Savings arc + micro insight */}
-        <div className="flex flex-col items-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.35, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <SavingsArc rate={Math.min(100, Math.max(0, Math.round(savingsRate)))} />
-          </motion.div>
-          {microInsight && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.2, duration: 0.4 }}
-              className="mt-2 text-sm text-text-secondary font-medium text-center"
-            >
-              {microInsight}
-            </motion.p>
-          )}
-        </div>
+      {/* 3 Colored stat cards in a row — Sakuku style */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <HeroStatCard
+          title="Total Income"
+          value={income}
+          sub={`${creditCount} credits`}
+          icon={TrendingUp}
+          accentColor="#10B981"
+          bgColor="rgba(16,185,129,0.1)"
+          delay={0}
+        />
+        <HeroStatCard
+          title="Total Spends"
+          value={expenses}
+          sub={`${debitCount} debits`}
+          icon={TrendingDown}
+          accentColor="#EF4444"
+          bgColor="rgba(239,68,68,0.1)"
+          delay={0.07}
+        />
+        <HeroStatCard
+          title="Net Savings"
+          value={Math.abs(savings)}
+          sub={`${Math.round(savingsRate)}% of income`}
+          icon={PiggyBank}
+          accentColor={savingsColor}
+          bgColor={savings >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'}
+          delay={0.14}
+          prefix={savings < 0 ? '−' : ''}
+        />
       </div>
+
+      {/* Savings arc */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className="flex justify-center pt-2"
+      >
+        <SavingsArc rate={Math.min(100, Math.max(0, Math.round(savingsRate)))} />
+      </motion.div>
     </div>
   )
 }

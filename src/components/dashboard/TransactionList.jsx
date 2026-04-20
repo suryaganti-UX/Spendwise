@@ -445,11 +445,6 @@ function TransactionRow({ txn, isExpanded, isHighlighted, onToggle, onRecategori
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <BankBadge bankId={txn.bank} size="sm" />
-            {isUpiDescription(txn.description) && (
-              <span className="text-2xs px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 font-medium">
-                UPI Transfer
-              </span>
-            )}
             {isRecurring && (
               <span className="text-2xs px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 font-medium" title="Recurring charge">
                 🔁 Recurring

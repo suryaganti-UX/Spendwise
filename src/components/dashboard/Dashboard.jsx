@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { ViewTabs } from './ViewTabs.jsx'
 import { FilterBar } from './FilterBar.jsx'
 import { NarrativeDashboard } from './NarrativeDashboard.jsx'
+import { BentoDashboard } from './BentoDashboard.jsx'
 import { InsightBanner } from './InsightBanner.jsx'
 import { CategoryBreakdown } from './CategoryBreakdown.jsx'
 import { TopMerchants } from './TopMerchants.jsx'
@@ -238,11 +239,20 @@ export function Dashboard({
       <header className="glass-header border-b border-border-soft sticky top-0 z-20">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="font-bold text-text-primary text-[15px] tracking-tight">
-              Spend<span className="text-accent" style={{ textShadow: '0 0 20px rgba(16,185,129,0.4)' }}>Wise</span>
-            </span>
+            {/* Logo mark — pill shape like Sakuku */}
+            <div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
+              style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
+            >
+              <span
+                className="font-bold text-accent text-[15px] tracking-tight"
+                style={{ textShadow: '0 0 16px rgba(16,185,129,0.3)' }}
+              >
+                Spend<span className="text-text-primary dark:text-white">Wise</span>
+              </span>
+            </div>
             {statements.length > 0 && (
-              <span className="hidden sm:inline text-xs text-text-hint">
+              <span className="hidden sm:inline text-xs text-text-hint px-2 py-1 rounded-lg bg-bg-tertiary">
                 {statements.length} {statements.length === 1 ? 'statement' : 'statements'}
               </span>
             )}
@@ -251,7 +261,7 @@ export function Dashboard({
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopySummary}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs text-text-secondary border border-border-soft rounded-xl hover:border-accent hover:text-accent transition-colors"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs text-text-secondary bg-bg-tertiary border border-border-soft rounded-xl hover:border-accent hover:text-accent transition-colors"
               title="Copy summary to clipboard"
             >
               {copiedSummary ? <Check className="w-3.5 h-3.5 text-positive" /> : <Share2 className="w-3.5 h-3.5" />}
@@ -299,10 +309,10 @@ export function Dashboard({
 
             <button
               onClick={onToggleTheme}
-              className="p-2 rounded-xl border border-border-soft hover:bg-bg-tertiary transition-colors"
+              className="p-2 rounded-xl border border-border-soft bg-bg-tertiary hover:bg-bg-secondary transition-colors"
               aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-text-secondary" />}
             </button>
 
             <button
@@ -340,7 +350,7 @@ export function Dashboard({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <NarrativeDashboard
+              <BentoDashboard
                 income={income}
                 expenses={expenses}
                 savings={savings}
