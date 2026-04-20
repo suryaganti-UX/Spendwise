@@ -73,6 +73,7 @@ export function NarrativeDashboard({
   onSortChange,
   onRecategorize,
   onScrollToTransactions,
+  recurringIds = new Set(),
 }) {
   const txnRef = useRef(null)
 
@@ -241,6 +242,7 @@ export function NarrativeDashboard({
             sortOrder={sortOrder}
             onSortChange={onSortChange}
             onRecategorize={onRecategorize}
+            recurringIds={recurringIds}
           />
         </div>
       </Section>

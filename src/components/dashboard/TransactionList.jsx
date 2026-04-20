@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Search, ChevronDown, X, ChevronRight, ChevronLeft } from 'lucide-react'
-import { format } from 'date-fns'
+import { Search, ChevronDown, X, ChevronRight, ChevronLeft, Calendar } from 'lucide-react'
+import { format, startOfMonth, endOfMonth, subMonths, isWithinInterval, parseISO } from 'date-fns'
 import { formatINR, formatINRCompact } from '../../utils/currency.js'
 import { BankBadge } from '../ui/BankBadge.jsx'
 import { getCategoryById, CATEGORIES } from '../../constants/categories.js'
@@ -21,15 +21,18 @@ export function TransactionList({
   onSortChange,
   onRecategorize,
   highlightId = null,
+  recurringIds = new Set(),
 }) {
   const [expandedId, setExpandedId] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
   const [page, setPage] = useState(0)
   const [recatDropdown, setRecatDropdown] = useState(null)
+  // Date range: { from: 'yyyy-MM-dd' | null, to: 'yyyy-MM-dd' | null }
+  const [dateRange, setDateRange] = useState({ from: null, to: null })
   const searchRef = useRef(null)
 
   // Reset page when filters change
-  useEffect(() => { setPage(0) }, [searchQuery, selectedCategory, typeFilter, sortBy, sortOrder])
+  useEffect(() => { setPage(0) }, [searchQuery, selectedCategory, typeFilter, sortBy, sortOrder, dateRange])
 
   // Keyboard shortcut: / focuses search
   useEffect(() => {
@@ -52,6 +55,13 @@ export function TransactionList({
 
     // Category filter
     if (selectedCategory) list = list.filter(t => t.category === selectedCategory)
+
+    // Date range filter
+    if (dateRange.from || dateRange.to) {
+      const from = dateRange.from ? new Date(dateRange.from + 'T00:00:00') : new Date(0)
+      const to = dateRange.to ? new Date(dateRange.to + 'T23:59:59') : new Date(8640000000000000)
+      list = list.filter(t => t.date >= from && t.date <= to)
+    }
 
     // Search
     if (searchQuery) {
@@ -91,11 +101,38 @@ export function TransactionList({
   }, [filtered, page])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const hasDateFilter = dateRange.from || dateRange.to
   const activeFilterCount = [
     selectedCategory,
     typeFilter !== 'all' ? typeFilter : null,
     searchQuery ? searchQuery : null,
+    hasDateFilter ? 'date' : null,
   ].filter(Boolean).length
+
+  // Derive min/max dates from transactions for input clamping
+  const txnDateBounds = useMemo(() => {
+    if (!transactions.length) return { min: '', max: '' }
+    const dates = transactions.map(t => format(t.date, 'yyyy-MM-dd')).sort()
+    return { min: dates[0], max: dates[dates.length - 1] }
+  }, [transactions])
+
+  function applyQuickDate(preset) {
+    const now = new Date()
+    if (preset === 'this-month') {
+      setDateRange({
+        from: format(startOfMonth(now), 'yyyy-MM-dd'),
+        to: format(endOfMonth(now), 'yyyy-MM-dd'),
+      })
+    } else if (preset === 'last-month') {
+      const last = subMonths(now, 1)
+      setDateRange({
+        from: format(startOfMonth(last), 'yyyy-MM-dd'),
+        to: format(endOfMonth(last), 'yyyy-MM-dd'),
+      })
+    } else if (preset === 'all') {
+      setDateRange({ from: null, to: null })
+    }
+  }
 
   return (
     <div>
@@ -206,18 +243,42 @@ export function TransactionList({
                   </div>
                 </div>
 
-                {/* Date shortcuts */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-text-hint w-20">Quick</span>
-                  <div className="flex gap-1 flex-wrap">
-                    {['This Month', 'Last Month'].map(label => (
-                      <button
-                        key={label}
-                        className="px-2 py-1 text-xs rounded-lg bg-bg-tertiary text-text-secondary hover:bg-accent-light hover:text-accent transition-colors"
-                      >
-                        {label}
-                      </button>
-                    ))}
+                {/* Date range */}
+                <div className="flex items-start gap-2">
+                  <span className="text-xs text-text-hint w-20 pt-1">Date</span>
+                  <div className="flex flex-col gap-2 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="date"
+                        value={dateRange.from || ''}
+                        min={txnDateBounds.min}
+                        max={dateRange.to || txnDateBounds.max}
+                        onChange={e => setDateRange(r => ({ ...r, from: e.target.value || null }))}
+                        className="text-xs border border-border-soft rounded-lg px-2 py-1 bg-bg-secondary text-text-primary focus:outline-none focus:border-accent flex-1"
+                        aria-label="From date"
+                      />
+                      <span className="text-xs text-text-hint">to</span>
+                      <input
+                        type="date"
+                        value={dateRange.to || ''}
+                        min={dateRange.from || txnDateBounds.min}
+                        max={txnDateBounds.max}
+                        onChange={e => setDateRange(r => ({ ...r, to: e.target.value || null }))}
+                        className="text-xs border border-border-soft rounded-lg px-2 py-1 bg-bg-secondary text-text-primary focus:outline-none focus:border-accent flex-1"
+                        aria-label="To date"
+                      />
+                    </div>
+                    <div className="flex gap-1 flex-wrap">
+                      {[['this-month', 'This Month'], ['last-month', 'Last Month'], ['all', 'All']].map(([preset, label]) => (
+                        <button
+                          key={preset}
+                          onClick={() => applyQuickDate(preset)}
+                          className="px-2 py-0.5 text-xs rounded-lg bg-bg-tertiary text-text-secondary hover:bg-accent-light hover:text-accent transition-colors"
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -238,6 +299,15 @@ export function TransactionList({
               <span className="flex items-center gap-1 text-xs bg-accent-light text-accent px-2 py-0.5 rounded-full border border-accent/20">
                 {typeFilter === 'debit' ? 'Money Out' : 'Money In'}
                 <button onClick={() => onTypeFilterChange('all')} aria-label="Remove type filter"><X className="w-3 h-3" /></button>
+              </span>
+            )}
+            {hasDateFilter && (
+              <span className="flex items-center gap-1 text-xs bg-accent-light text-accent px-2 py-0.5 rounded-full border border-accent/20">
+                <Calendar className="w-3 h-3" />
+                {dateRange.from && dateRange.to
+                  ? `${dateRange.from} → ${dateRange.to}`
+                  : dateRange.from ? `From ${dateRange.from}` : `Until ${dateRange.to}`}
+                <button onClick={() => setDateRange({ from: null, to: null })} aria-label="Remove date filter"><X className="w-3 h-3" /></button>
               </span>
             )}
             {searchQuery && (
@@ -267,6 +337,7 @@ export function TransactionList({
               onSearchChange('')
               onCategorySelect(null)
               onTypeFilterChange('all')
+              setDateRange({ from: null, to: null })
             }}
             className="text-xs text-accent hover:underline"
           >
@@ -297,6 +368,7 @@ export function TransactionList({
                   txn={txn}
                   isExpanded={expandedId === txn.id}
                   isHighlighted={highlightId === txn.id}
+                  isRecurring={recurringIds.has(txn.id)}
                   onToggle={() => setExpandedId(expandedId === txn.id ? null : txn.id)}
                   onRecategorize={onRecategorize}
                   recatDropdown={recatDropdown}
@@ -340,7 +412,7 @@ function isUpiDescription(desc) {
   return /upi[/-]/i.test(desc) || /\S+@\S+/.test(desc) || /\bvpa\b/i.test(desc)
 }
 
-function TransactionRow({ txn, isExpanded, isHighlighted, onToggle, onRecategorize, recatDropdown, setRecatDropdown }) {
+function TransactionRow({ txn, isExpanded, isHighlighted, onToggle, onRecategorize, recatDropdown, setRecatDropdown, isRecurring }) {
   const cat = getCategoryById(txn.category)
   const isDebit = txn.type === 'debit'
 
@@ -376,6 +448,11 @@ function TransactionRow({ txn, isExpanded, isHighlighted, onToggle, onRecategori
             {isUpiDescription(txn.description) && (
               <span className="text-2xs px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 font-medium">
                 UPI Transfer
+              </span>
+            )}
+            {isRecurring && (
+              <span className="text-2xs px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 font-medium" title="Recurring charge">
+                🔁 Recurring
               </span>
             )}
             <span

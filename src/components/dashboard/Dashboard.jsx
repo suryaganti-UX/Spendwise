@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Download, RefreshCw, Moon, Sun, Share2, Check, FileText, Target } from 'lucide-react'
+import { Download, RefreshCw, Moon, Sun, Share2, Check, FileText, Target, Lock, X as XIcon } from 'lucide-react'
 import { format } from 'date-fns'
 
 import { ViewTabs } from './ViewTabs.jsx'
@@ -69,6 +69,12 @@ export function Dashboard({
 }) {
   const [copiedSummary, setCopiedSummary] = useState(false)
   const [showBudgets, setShowBudgets] = useState(false)
+  const [privacyDismissed, setPrivacyDismissed] = useState(() => !!localStorage.getItem('sw_privacy_dismissed'))
+
+  function dismissPrivacy() {
+    localStorage.setItem('sw_privacy_dismissed', '1')
+    setPrivacyDismissed(true)
+  }
   const { budgets: savedBudgets, refresh: refreshBudgets } = useBudgets()
   const hasBudgets = Object.values(savedBudgets).some(v => v > 0)
 
@@ -99,6 +105,14 @@ export function Dashboard({
   const monthlyData = useMemo(() => getCrossMonthTrend(activeTransactions), [activeTransactions])
   const duplicates = useMemo(() => detectDuplicates(activeTransactions), [activeTransactions])
   const shortPeriod = useMemo(() => isShortPeriod(activeTransactions), [activeTransactions])
+  // Set of transaction IDs that belong to a detected recurring charge
+  const recurringIds = useMemo(() => {
+    const ids = new Set()
+    for (const sub of subscriptions) {
+      for (const txn of sub.transactions || []) ids.add(txn.id)
+    }
+    return ids
+  }, [subscriptions])
 
   const creditCount = activeTransactions.filter(t => t.type === 'credit').length
   const debitCount = activeTransactions.filter(t => t.type === 'debit').length
@@ -189,6 +203,36 @@ export function Dashboard({
           </span>
         </div>
       )}
+
+      {/* Privacy assurance banner — dismissible */}
+      <AnimatePresence>
+        {!privacyDismissed && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div
+              className="max-w-[1200px] mx-auto px-4 sm:px-6 py-2 flex items-center gap-2.5"
+              data-print-hide
+            >
+              <Lock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }} />
+              <p className="text-xs text-text-hint flex-1">
+                Your statements are processed <strong className="text-text-secondary">entirely in your browser</strong> — no account needed, no data sent to any server.
+              </p>
+              <button
+                onClick={dismissPrivacy}
+                className="flex-shrink-0 text-text-hint hover:text-text-secondary transition-colors"
+                aria-label="Dismiss privacy notice"
+              >
+                <XIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <header className="glass-header border-b border-border-soft sticky top-0 z-20">
@@ -326,6 +370,7 @@ export function Dashboard({
                 sortOrder={sortOrder}
                 onSortChange={onSortChange}
                 onRecategorize={onRecategorize}
+                recurringIds={recurringIds}
               />
             </motion.div>
           )}
