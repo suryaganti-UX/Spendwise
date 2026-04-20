@@ -207,7 +207,6 @@ export function NarrativeDashboard({
       <Section
         id="s-trend"
         label="05 / Trend"
-        title="Spending Over Time"
         subtitle="Toggle between daily, weekly, and category views"
       >
         <div

@@ -62,12 +62,13 @@ export function categorizeTransaction(txn, userRules = []) {
     return 'income'
   }
 
-  // UPI transfer patterns (e.g. "UPI-JOHN@okicici", "Pay to user@upi", "VPA upi@bank")
-  const isUpiTransfer =
-    /upi[/-]/i.test(txn.description || '') ||
-    /\S+@\S+/.test(txn.description || '') ||
-    /\bvpa\b/i.test(txn.description || '')
-  if (isUpiTransfer && txn.type === 'debit') return 'transfers'
+  // UPI transfer patterns — person-to-person only (e.g. "UPI/abc@okicici", bare VPA)
+  // Carefully exclude well-known merchant names that carry "upi" as a prefix
+  // by only matching when the description has NO recognisable merchant keyword.
+  const rawDesc = txn.description || ''
+  const isVpaPattern = /\S+@(okicici|oksbi|okaxis|okhdfcbank|ybl|upi|paytm|axl|ibl|rbl|apl|fbl|barodampay|hsbc|allbank|augbank|boi|cnrb|csbpay|dcb|dbs|ezeepay|fbl|hdfcbank|icici|idbi|idfcbank|indus|jsbp|kbl|kotak|kvb|lvb|mahb|pnb|psb|rbl|scb|sib|srcb|tjsb|uco|unionbank|vjb|waaxis)$/i.test(rawDesc)
+  const isBareUpiRef = /^(upi|neft|imps|rtgs)[\s/-]/i.test(rawDesc) && !/swiggy|zomato|amazon|flipkart|netflix|spotify|hotstar|uber|ola|irctc|rapido|groww|zerodha|lic|apollo|pharmacy|petrol|diesel|electricity|gas|broadband|airtel|jio/i.test(rawDesc)
+  if ((isVpaPattern || isBareUpiRef) && txn.type === 'debit') return 'transfers'
 
   // Sort categories by priority, check keywords
   const sorted = [...CATEGORIES].sort((a, b) => a.priority - b.priority)

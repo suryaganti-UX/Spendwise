@@ -299,16 +299,43 @@
   /* Hide chrome and interactive elements */
   header,
   footer,
+  nav,
   [data-print-hide],
   button,
   .no-print {
     display: none !important;
   }
 
-  body {
-    background: #fff !important;
-    color: #111 !important;
+  /* Force light backgrounds — dark theme uses CSS vars + inline rgba which survive body override */
+  html,
+  body,
+  #root,
+  #main-content {
+    background: #ffffff !important;
+    color: #111111 !important;
     font-size: 11pt;
+  }
+
+  /* Override every dark glass panel inline style */
+  [style*="rgba(255,255,255,0.03)"],
+  [style*="rgba(255,255,255,0.04)"],
+  [style*="rgba(255,255,255,0.05)"],
+  [style*="rgba(255,255,255,0.06)"],
+  [style*="rgba(255,255,255,0.07)"],
+  [style*="rgba(255,255,255,0.08)"] {
+    background: #f8f9fa !important;
+    border-color: #e0e0e0 !important;
+  }
+
+  /* Override dark navy/bg CSS variables */
+  :root {
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f4f4f5;
+    --color-bg-tertiary: #e9e9ec;
+    --color-text-primary: #111111;
+    --color-text-secondary: #444444;
+    --color-text-hint: #777777;
+    --color-border-soft: #d0d0d4;
   }
 
   main {
@@ -329,20 +356,39 @@
   .card,
   .rounded-2xl,
   .rounded-xl {
+    background: #f8f9fa !important;
     box-shadow: none !important;
-    border: 1pt solid #E8E4DF !important;
+    border: 1pt solid #e0e0e0 !important;
     break-inside: avoid;
     page-break-inside: avoid;
   }
+
+  /* Glassmorphism utility classes → plain light panels */
+  .glass,
+  .glass-header {
+    background: #f8f9fa !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: #e0e0e0 !important;
+  }
+
+  /* Tailwind dark bg classes */
+  .bg-bg-primary  { background-color: #ffffff !important; }
+  .bg-bg-secondary { background-color: #f4f4f5 !important; }
+  .bg-bg-tertiary  { background-color: #e9e9ec !important; }
+  .text-text-primary   { color: #111111 !important; }
+  .text-text-secondary { color: #444444 !important; }
+  .text-text-hint      { color: #777777 !important; }
 
   /* Avoid breaking mid-section */
   section,
-  .space-y-5 > * {
+  .space-y-5 > *,
+  .space-y-10 > * {
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
-  /* Color preservation */
+  /* Color preservation for charts and badges */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

@@ -167,7 +167,7 @@ export function FileCard({ statement, onRemove, onSetBank, onSubmitPassword }) {
               {skippedLines > 0 && (
                 <span className="flex items-center gap-1 text-warning">
                   <AlertTriangle className="w-3 h-3" />
-                  {skippedLines} lines skipped
+                  {skippedLines} transaction{skippedLines > 1 ? 's' : ''} couldn’t be read — excluded from analysis
                 </span>
               )}
             </div>

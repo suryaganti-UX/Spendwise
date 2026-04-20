@@ -9,7 +9,7 @@ function SavingsArc({ rate = 0 }) {
   const [progress, setProgress] = useState(0)
   const r = 72
   const circumference = Math.PI * r // ≈ 226.2
-  const filled = (progress / 100) * circumference
+  const filled = Math.max(0.001, (progress / 100) * circumference)
 
   // Color thresholds
   const color = rate >= 20 ? '#10B981' : rate >= 10 ? '#F59E0B' : '#EF4444'

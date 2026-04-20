@@ -177,10 +177,16 @@ export function Dashboard({
 
   return (
     <div id="main-content" className="min-h-screen bg-bg-primary">
-      {/* Demo banner */}
+      {/* Demo chip — subtle, tucked near the filter row */}
       {isDemoMode && (
-        <div className="bg-accent text-white text-xs font-medium text-center py-2">
-          Demo mode — sample data from 3 banks. Upload your own PDFs to analyse your spending.
+        <div className="flex items-center justify-center py-1.5">
+          <span
+            className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-medium"
+            style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#10B981' }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+            Demo — sample data · Upload your own PDFs to analyse real spending
+          </span>
         </div>
       )}
 
